@@ -104,7 +104,7 @@ const config: Config = {
           items: [
             {
               label: 'Tutorial',
-              to: '/docs/intro',
+              to: '/docs/intro/overview',
             },
           ],
         },
@@ -130,7 +130,7 @@ const config: Config = {
           items: [
             {
               label: 'Blog',
-              to: '/blog',
+              to: 'https://github.com/supermd-dev',
             },
             {
               label: 'GitHub',

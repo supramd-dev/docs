@@ -1,0 +1,40 @@
+name: deploy website
+on:
+  push:
+    branches: [main]
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+
+jobs:
+  docs-deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - uses: actions/checkout@v4
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '24'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - name: Install and Build
+        run: |
+          bun install
+          bun run build
+      - uses: amondnet/vercel-action@v42 # deploy
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
+          # github-token: ${{ secrets.GITHUB_TOKEN }} # Optional
+          vercel-args: "--prod" # Optional
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}} # Required
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}} # Required
+          working-directory: ./build/
+          prebuilt: true
+        env:
+          CI: true
+          DOC_DEPLOY_PATH: "/MDoc/"
+          DOC_GIT_REPO: "https://github.com/supermd/docs"
+          DOC_SITE_URL: "https://supermd.github.io"
+          SOURCE_GIT_REPO: "https://github.com/supermd/supermd"
+
