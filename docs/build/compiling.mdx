@@ -6,7 +6,7 @@ sidebar_label: "编译构建"
 ---
 
 import AsciinemaPlayer from '@site/src/components/AsciinemaPlayer';
-import myRecording from './imgs/mtp3-md-dcu.cast';
+import MDBuildCPU from './imgs/md-build.cpu.cast';
 
 SuperMD使用CMake工具进行编译构建，如果你不熟悉CMake，可以参考CMake的相关文档。
 在正式进行构建之前，确保你的系统已经安装并配置了CMake工具、相符版本的c++编译器、MPI环境等，
@@ -46,10 +46,11 @@ cmake -B./build -H./ -DTEST_ENABLE_FLAG=OFF -DTOOLS_BUILD_ENABLE_FLAG=OFF
 cmake --build ./build -j 4
 ```
 
-这是一个同级目录导入并播放的演示：
+
+下面是一个完整的从依赖包获取、依赖包构建、SuperMD CPU 版本构建的终端录制：  
 
 <AsciinemaPlayer 
-  src={myRecording} 
+  src={MDBuildCPU}
   autoPlay={true} 
   loop={true} 
   rows={40} 
