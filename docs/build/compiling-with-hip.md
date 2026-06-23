@@ -5,11 +5,23 @@ title: "编译构建: 添加异构 GPU/DCU 支持"
 sidebar_label: "编译构建: 添加 GPU/DCU 支持"
 ---
 
+import AsciinemaPlayer from '@site/src/components/AsciinemaPlayer';
+import MDBuildDCU from './imgs/md-build.dcu.cast';
+
 SuperMD 对英伟达 GPU、AMD GPU 及 DCU 等硬件的支持是通过 HIP 实现的。  
 [HIP](https://github.com/ROCm-Developer-Tools/HIP) 是 AMD 推动的用于在 NVIDIA GPUs、AMD GPU 和 DCU 等硬件上进行加速计算的编程模型，其 API 也十分接近 NVIDIA CUDA，并支持将 CUDA 代码转化为 HIP 代码。
 目前，HIP 支持 NVIDIA CUDA 和 [AMD ROCm](https://rocmdocs.amd.com/en/latest/index.html) 平台。
 SuperMD 则是通过 HIP 来实现对多种加速硬件的计算支持。
 具体有关 HIP 的安装和环境配置请参见[相关文档](https://github.com/ROCm-Developer-Tools/HIP/blob/main/INSTALL.md)。
+
+<AsciinemaPlayer 
+  src={MDBuildDCU}
+  autoPlay={true} 
+  loop={true} 
+  rows={32} 
+  theme="asciinema"
+/>
+
 
 ## 准备额外的源码
 为了支持在 GPU 上运行 SuperMD，在开始构建之前，除了 CPU 版本所需的依赖包外，还需要获取几个额外的源码包： 
