@@ -11,32 +11,32 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Massively Parallel MD simulation',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Expanded to 4x10^12 and <b>3x10^13</b> atoms on Sunway supercomputer and Intelligent supercomputers.
+        GPU support is available for <b>Hygon DCUs</b>, NVIDIA and AMD GPUs. 
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'Full-featured Material Simulation',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Professional simulator for material. 
+        Full ensemble support (NVE, NVT, NPT), various force fields (Empirical potential, AI potential, APIs for customized potential),
+        and many analysis tools are available.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Parallel kinetic Monte Carlo simulation',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        With on-lattice and off-lattice models, it can be used to simulate the growth of thin films, the evolution of microstructures, and the diffusion of atoms in materials.
       </>
     ),
   },
