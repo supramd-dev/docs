@@ -4,15 +4,14 @@ id: compiling-with-hip
 title: "编译构建: 添加异构 GPU/DCU 支持"
 sidebar_label: "编译构建: 添加 GPU/DCU 支持"
 ---
-
 import AsciinemaPlayer from '@site/src/components/AsciinemaPlayer';
 import MDBuildDCU from './imgs/md-build.dcu.cast';
 
-SuperMD 对英伟达 GPU、AMD GPU 及 DCU 等硬件的支持是通过 HIP 实现的。  
-[HIP](https://github.com/ROCm-Developer-Tools/HIP) 是 AMD 推动的用于在 NVIDIA GPUs、AMD GPU 和 DCU 等硬件上进行加速计算的编程模型，其 API 也十分接近 NVIDIA CUDA，并支持将 CUDA 代码转化为 HIP 代码。
-目前，HIP 支持 NVIDIA CUDA 和 [AMD ROCm](https://rocmdocs.amd.com/en/latest/index.html) 平台。
-SuperMD 则是通过 HIP 来实现对多种加速硬件的计算支持。
-具体有关 HIP 的安装和环境配置请参见[相关文档](https://github.com/ROCm-Developer-Tools/HIP/blob/main/INSTALL.md)。
+SuperMD 通过 HIP 及相关工具链支持 NVIDIA GPU、AMD GPU 和国产 DCU 等异构硬件。  
+在海光 DCU 平台上，可以使用 DTK 提供的 `dcc` 编译器完成依赖安装和项目构建。
+
+本文以 **DCU + DTK** 环境为例，介绍依赖获取、CMake 配置、编译和运行流程。
+
 <AsciinemaPlayer
   src={MDBuildDCU}
   autoPlay={true}
@@ -21,60 +20,61 @@ SuperMD 则是通过 HIP 来实现对多种加速硬件的计算支持。
   theme="asciinema"
 />
 
-以下是完整的编译与运行流程说明。
+## 1. 准备构建环境
 
-## 1. 环境准备
+不同服务器可能通过环境模块、Spack、容器或系统预安装等方式提供编译环境。本文不限定具体的环境加载方式，请根据所在平台完成 MPI、DTK、CMake 和 `pkg` 的安装或加载，并确保相关命令位于 `PATH` 中。
 
-首先在 DCU 服务器上进入 SuperMD（MISA-MD） 源码所在目录所在环境，并加载 MPI 与 DTK 工具链：
+下面是当前已验证的工具版本组合。它们表示已完成测试的环境，并不代表项目支持的最低版本。
 
-```bash
-spack load mpich dtk
-```
+| 工具 | 用途 | 已验证版本 |
+| --- | --- | --- |
+| MPICH / `mpirun` | MPI 并行运行环境 | MPICH 4.3.2 |
+| DTK / `dcc` | DCU 平台 C/C++ 与 HIP 编译工具链 | DTK 26.04，`dcc` 25.10.0-0 |
+| CMake | 项目配置与构建 | 3.26.5 |
+| `pkg` | 项目依赖获取与安装 | v0.6.4-nightly，commit `81fba0eed2e8b4539810c4d0aac5aa46b1afb098` |
 
-建议在构建前确认 `mpirun`、`dcc`、`cmake` 和 `pkg` 均可正常使用：
+构建前可使用以下命令确认工具是否可用：
 
 ```bash
 which mpirun
 which dcc
+
 dcc --version
 cmake --version
 pkg version
 ```
 
-一个已验证的环境示例如下：
+只要上述命令能够正常找到程序并输出版本信息，即可继续后续步骤。
 
-```text
-$ which mpirun
-/public/software/spack/spack/opt/spack/linux-x86_64_v3/mpich-4.3.2-gohdue6czlt24qkrk2v4xxvh2x3q3yqj/bin/mpirun
+## 2. 获取 HIP 相关依赖
 
-$ which dcc
-/opt/dtk-26.04/llvm/bin/dcc
+进入 SuperMD 源码根目录：
 
-$ dcc --version
-dcc version: 25.10.0-0
-clang version 17.0.0
-InstalledDir: /opt/dtk-26.04/llvm/bin
-
-$ cmake --version
-cmake version 3.26.5
-
-$ pkg version
-version  v0.6.4-nightly
-Commit   81fba0eed2e8b4539810c4d0aac5aa46b1afb098
-Build time       2026-06-20 01:32:38
+```bash
+cd /path/to/supermd
 ```
+
+清理旧缓存，并拉取启用 HIP 特性所需的依赖：
+
+```bash
+pkg clean --all
+pkg fetch --features=hip
+```
+
+依赖拉取成功后，终端会输出类似 `fetch succeed` 的提示。
 
 :::info
 如果 `pkg version` 能正常输出版本信息，说明 `pkg` 工具本身已经可用。后续如果在 `pkg fetch` 阶段遇到私有仓库认证或依赖拉取失败问题，请参考下面的“私有仓库认证”和“依赖仓库替换”小节。
 :::
 
-## 2. 配置私有仓库认证（可选）
 
-如果依赖包存放在 GitLab 私有仓库中，需要先为 `pkg` 配置访问权限。
+### 2.1 配置私有仓库认证（可选）
 
-1. 登录 GitLab，在用户 **Profile** 页面进入 **Access Tokens** 子页面。
-2. 新建一个 Access Token，权限只需要勾选 `read_repository`。
-3. 在需要下载依赖包的 DCU 环境中，编辑或新建 `~/.pkg/pkg.config.yaml`：
+如果 `pkg fetch` 需要访问 GitLab 私有仓库，例如 `git.hpcer.dev`，请先配置只读访问令牌。
+
+1. 在 GitLab 用户页面进入 **Access Tokens**。
+2. 新建 Access Token，并勾选 `read_repository` 权限。
+3. 编辑或新建 `~/.pkg/pkg.config.yaml`：
 
 ```yaml
 auth:
@@ -83,22 +83,18 @@ auth:
     token: your_access_token
 ```
 
-保存后，再执行 `pkg fetch` 时，`pkg` 会自动使用该 Access Token 拉取私有仓库代码。
-
-## 3. 拉取 HIP 相关依赖
-
-进入 SuperMD 源码根目录，清理旧缓存并拉取 HIP 依赖：
+保存后重新执行：
 
 ```bash
-cd workspace/md-tests/supermd/
-
-pkg clean --all
 pkg fetch --features=hip
 ```
 
-正常情况下，最后会看到类似 `fetch succeed` 的输出。
 
-如果由于网络或仓库访问问题导致依赖拉取失败，可以编辑源码根目录下的 `pkg.yaml`，将 `git-replace` 中的镜像替换配置取消注释。例如：
+### 2.2 使用依赖仓库替换配置（可选）
+
+如果访问 GitHub 较慢或依赖拉取失败，可以检查项目根目录中的 `pkg.yaml`，并按当前部署环境取消 `git-replace` 下已有镜像配置的注释。
+
+例如：
 
 ```yaml
 git-replace:
@@ -114,84 +110,55 @@ git-replace:
   github.com/misa-md/hip-potential: git.hpcer.dev/HPCer/MISA-MD/hip-potential
 ```
 
-:::tip
-如果使用 `git.hpcer.dev` 上的私有镜像，请确保已经按上一节配置了 `~/.pkg/pkg.config.yaml` 中的认证信息。
-:::
+如果替换后的地址指向私有仓库，还需要同时完成上一节中的认证配置。
 
-## 4. 安装依赖包
+## 3. 安装依赖
 
-在 DCU 环境中，建议将 C/C++ 编译器指定为 `dcc`：
+在 DCU + DTK 环境中，将 C 和 C++ 编译器设置为 `dcc`：
 
 ```bash
-export CC=dcc CXX=dcc
+export CC=dcc
+export CXX=dcc
 ```
 
-如果是在 ROCm 环境中构建，也可以使用 `hipcc`：
-
-```bash
-export CC=hipcc CXX=hipcc
-```
-
-然后执行依赖安装：
+然后安装依赖：
 
 ```bash
 pkg install -j 32
 ```
 
-正常结束时，终端会输出类似：
+`-j 32` 表示最多使用 32 个并行任务，可根据服务器资源调整。安装成功后会看到类似下面的输出：
 
 ```text
 all packages installed successfully
 ```
 
-可以通过下面的命令查看当前已经安装的依赖包：
+## 4. 使用 CMake Presets 配置项目
 
-```bash
-pkg list
-```
+[CMake Presets](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) 是 CMake 提供的标准配置机制。项目可以在 `CMakePresets.json` 中预先保存生成器、编译器、构建目录和缓存变量等配置，用户通过 preset 名称即可复用这些参数，而不需要每次手动输入完整的 CMake 命令。
 
-示例输出如下：
-
-```text
-git.hpcer.dev/HPCer/MISA-MD/potential@v0.4.0
-github.com/Taywee/args@6.2.2
-github.com/fmtlib/fmt@11.1.4
-github.com/genshen/kiwi@v0.5.1
-github.com/google/benchmark@v1.8.2
-github.com/google/googletest@release-1.12.1
-github.com/jbeder/yaml-cpp@yaml-cpp-0.7.0
-github.com/misa-kmc/xoshiro@v0.2.0
-github.com/misa-md/hip-potential@v0.5.1
-github.com/misa-md/libcomm@v0.7.0
-github.com/misa-md/potential@v0.4.0
-```
-
-## 5. 使用 CMake Preset 配置 DCU 构建
-
-SuperMD 提供了多个 CMake 配置预设。可以先查看当前仓库支持的 preset：
+在源码根目录执行：
 
 ```bash
 cmake --list-presets
 ```
 
-常见输出如下：
+该命令会读取项目中的 CMake preset 配置，并列出可用的 **configure presets**。当前项目通常包含以下预设：
 
-```text
-Available configure presets:
+| Preset | 目标平台 | 编译器 |
+| --- | --- | --- |
+| `host-default` | CPU / Host | 使用环境变量中的 `$CC` 和 `$CXX` |
+| `dtk-dcc` | 海光 DCU / DTK | `dcc` |
+| `rocm-hipcc` | AMD GPU / ROCm | `hipcc` |
+| `cuda-hipcc` | NVIDIA GPU / CUDA | `hipcc` |
 
-  "host-default" - Build for Host platform using $CC and $CXX
-  "dtk-dcc"      - Build for DTK platform using dcc
-  "rocm-hipcc"   - Build for ROCm platform using hipcc
-  "cuda-hipcc"   - Build for CUDA platform using hipcc
-```
-
-在 DCU + DTK 环境中，直接使用 `dtk-dcc` preset 进行配置：
+在 DCU 平台上，使用 `dtk-dcc` preset 完成配置：
 
 ```bash
 cmake --preset=dtk-dcc
 ```
 
-如果配置成功，最后会看到类似下面的输出：
+该命令会使用 `dtk-dcc` 中预定义的编译器、构建目录和相关 CMake 参数。配置成功后会看到类似以下输出：
 
 ```text
 Configuring done
@@ -199,59 +166,79 @@ Generating done
 Build files have been written to: ...
 ```
 
-## 6. 编译 SuperMD
+:::tip
+`cmake --list-presets` 默认列出配置阶段使用的 preset。需要查看构建阶段的 preset 时，可以执行 `cmake --list-presets=build`。
+:::
 
-完成 CMake 配置后，执行构建命令：
+## 5. 编译 SuperMD
+
+完成配置后，使用对应的 build preset 编译项目：
 
 ```bash
 cmake --build --preset=dtk-dcc -j 8 2> err.log
 ```
 
-其中：
+参数说明：
 
-- `--preset=dtk-dcc`：使用 DCU/DTK 对应的构建预设；
-- `-j 8`：使用 8 个并行任务编译，可根据服务器资源调整；
-- `2> err.log`：将错误日志重定向到 `err.log`，方便排查编译问题。
+- `--preset=dtk-dcc`：使用项目中定义的 DCU/DTK 构建预设；
+- `-j 8`：使用 8 个并行任务，可根据服务器资源调整；
+- `2> err.log`：将标准错误输出保存到 `err.log`，便于排查编译问题。
 
-编译完成后，可执行文件通常会生成在 preset 对应的构建目录中，例如：
+编译完成后，可执行文件通常位于 preset 指定的构建目录中，例如：
 
 ```text
 cmake-build-gpu/bin/supermd
 ```
 
-## 7. 运行示例测试
+## 6. 运行示例
 
-进入 `example` 目录运行示例：
+进入 `example` 目录：
 
 ```bash
 cd example
-../cmake-build-gpu/bin/supermd -c config.md.yaml
 ```
 
-:::caution
-运行测试前，请确保 `example` 目录下已经放置了示例所需的 EAM 势文件，并且 `config.md.yaml` 中配置的势文件路径和文件名与实际文件一致。
-:::
+运行前，请确保示例所需的 EAM 势文件已经放置在正确位置，并且 `config.md.yaml` 中配置的文件路径与实际文件一致。
 
-如果程序能够正常读取配置文件并启动计算，说明 DCU 版本的 SuperMD 已经完成编译构建。
+运行时需要显式指定计算后端：
 
-## 8. DCU 构建命令汇总
+| 运行方式 | 命令行选项 | 说明 |
+| --- | --- | --- |
+| DCU / GPU 加速 | `--acc-gpu` | 启用 GPU/DCU 异构加速 |
+| CPU | `--acc-none` | 不启用异构加速，使用 CPU 运行 |
 
-如果环境和认证都已经配置好，DCU 平台上的完整构建流程可以简化为：
+在 DCU 上运行：
 
 ```bash
-spack load mpich dtk
+../cmake-build-gpu/bin/supermd -c config.md.yaml --acc-gpu
+```
 
-cd workspace/md-tests/supermd/
+使用 CPU 运行：
+
+```bash
+../cmake-build-gpu/bin/supermd -c config.md.yaml --acc-none
+```
+
+如果程序能够正常读取配置文件、加载势函数并开始计算，说明 SuperMD 已成功完成构建。
+
+## 7. DCU 构建命令汇总
+
+在 MPI、DTK、CMake、`pkg` 和私有仓库认证均已配置完成的情况下，DCU 平台的主要命令如下：
+
+```bash
+cd /path/to/supermd
 
 pkg clean --all
 pkg fetch --features=hip
 
-export CC=dcc CXX=dcc
+export CC=dcc
+export CXX=dcc
 pkg install -j 32
 
+cmake --list-presets
 cmake --preset=dtk-dcc
 cmake --build --preset=dtk-dcc -j 8 2> err.log
 
 cd example
-../cmake-build-gpu/bin/supermd -c config.md.yaml
+../cmake-build-gpu/bin/supermd -c config.md.yaml --acc-gpu
 ```
