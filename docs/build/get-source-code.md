@@ -17,14 +17,14 @@ sidebar_label: "获取源代码"
 ```bash
 git clone https://git.hpcer.dev/HPCer/MISA-MD/MISA-MD.git supramd # https
 # or clone from github
-git clone https://github.com/supramd/supramd.git
+git clone https://github.com/supramd-dev/supramd.git
 ```
 
 或者，如果你配置了ssh key, 也可以使用ssh协议进行clone:
 ```bash
 git clone ssh://git@git.hpcer.dev:2222/HPCer/MISA-MD/MISA-MD.git supramd # ssh
 # or clone from github
-git clone git@github.com:misa-md/MISA-MD.git supramd
+git clone git@github.com:supramd-dev/supramd.git supramd
 ```
 
 上述 git clone 命令会创建一个名为 supramd 的目录。
@@ -38,11 +38,11 @@ $ git checkout Branch_Or_Tag
 
 ### 1.2 直接下载源码包
 使用wget命令或者在浏览器中下载源代码压缩包。  
-如，下载v0.4.0版本的源码包：
+如，下载v2026.01.版本的源码包：
 ```bash
-$ wget -O supramd-v0.4.0.tat.gz \
-  https://git.hpcer.dev/HPCer/CrystalMD/CrystalMD/-/archive/v0.4.0/CrystalMD-v0.4.0.tar.gz
-$ tar -zxvf supramd-v0.4.0.tar.gz
+$ wget -O supramd-v2026.01.tat.gz \
+  https://github.com/supramd-dev/SupraMD/archive/refs/tags/v2026.01.tar.gz
+$ tar -zxvf supramd-v2026.01.tar.gz
 ```
 
 ## 2. 安装依赖
