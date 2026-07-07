@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'SuperMD',
+  title: 'SupraMD',
   tagline: 'A massively parallel molecular dynamics simulation program',
   favicon: 'img/favicon.ico',
 
@@ -44,7 +44,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/supermd-dev/docs/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/supramd-dev/docs/tree/main/packages/create-docusaurus/templates/shared/',
         },
         // blog: {
         //   showReadingTime: true,
@@ -76,9 +76,9 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'SuperMD',
+      title: 'SupraMD',
       logo: {
-        alt: 'SuperMD Logo',
+        alt: 'SupraMD Logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -90,7 +90,7 @@ const config: Config = {
         },
         // {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/supermd-dev/docs',
+          href: 'https://github.com/supramd-dev/docs',
           label: 'GitHub',
           position: 'right',
         },
@@ -130,16 +130,16 @@ const config: Config = {
           items: [
             {
               label: 'Blog',
-              to: 'https://github.com/supermd-dev',
+              to: 'https://github.com/supramd-dev',
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/supermd-dev',
+              href: 'https://github.com/supramd-dev',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} SuperMD, USTB. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} SupraMD, USTB. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

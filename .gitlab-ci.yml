@@ -10,7 +10,7 @@ build-website:
   tags: [pages]
   stage: build-website
   variables:
-    DOC_DEPLOY_PATH: "/supermd/docs/"
+    DOC_DEPLOY_PATH: "/supramd/docs/"
   before_script:
     - yarn install --registry https://registry.npm.taobao.org 
   script:

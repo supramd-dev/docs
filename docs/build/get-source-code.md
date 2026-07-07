@@ -5,7 +5,7 @@ title: "获取源代码"
 sidebar_label: "获取源代码"
 ---
 
-注：该文档中均使用 `$MD_PATH` 来指代 SuperMD 源码目录。
+注：该文档中均使用 `$MD_PATH` 来指代 SupraMD 源码目录。
 
 ## 1. 获取源码
 你可以使用以下任意一种方式获取代码：git clone、下载源码包。
@@ -15,22 +15,22 @@ sidebar_label: "获取源代码"
 如果你的系统中安装了git工具，可以使用git来clone源代码。
 这样的好处是，你可以随时切换使用其他任意版本的代码。
 ```bash
-git clone https://git.hpcer.dev/HPCer/MISA-MD/MISA-MD.git supermd # https
+git clone https://git.hpcer.dev/HPCer/MISA-MD/MISA-MD.git supramd # https
 # or clone from github
-git clone https://github.com/supermd/supermd.git
+git clone https://github.com/supramd/supramd.git
 ```
 
 或者，如果你配置了ssh key, 也可以使用ssh协议进行clone:
 ```bash
-git clone ssh://git@git.hpcer.dev:2222/HPCer/MISA-MD/MISA-MD.git supermd # ssh
+git clone ssh://git@git.hpcer.dev:2222/HPCer/MISA-MD/MISA-MD.git supramd # ssh
 # or clone from github
-git clone git@github.com:misa-md/MISA-MD.git supermd
+git clone git@github.com:misa-md/MISA-MD.git supramd
 ```
 
-上述 git clone 命令会创建一个名为 supermd 的目录。
+上述 git clone 命令会创建一个名为 supramd 的目录。
 克隆完成后，你可以选择通过调用以下命令来构建特定分支（如版本分支）
 ```bash
-$ cd $MD_PATH # SuperMD 源码目录
+$ cd $MD_PATH # SupraMD 源码目录
 $ git checkout Branch_Or_Tag
 # where ' Branch_Or_Tag' is the desired branch or tag.
 ```
@@ -40,18 +40,18 @@ $ git checkout Branch_Or_Tag
 使用wget命令或者在浏览器中下载源代码压缩包。  
 如，下载v0.4.0版本的源码包：
 ```bash
-$ wget -O supermd-v0.4.0.tat.gz \
+$ wget -O supramd-v0.4.0.tat.gz \
   https://git.hpcer.dev/HPCer/CrystalMD/CrystalMD/-/archive/v0.4.0/CrystalMD-v0.4.0.tar.gz
-$ tar -zxvf supermd-v0.4.0.tar.gz
+$ tar -zxvf supramd-v0.4.0.tar.gz
 ```
 
 ## 2. 安装依赖
 
 获取的源码中不包含该程序的依赖包，所以还需要额外的工作来安装依赖。
 
-SuperMD 依赖于一些开源库, 如[kiwi](https://git.hpcer.dev/genshen/kiwi),
+SupraMD 依赖于一些开源库, 如[kiwi](https://git.hpcer.dev/genshen/kiwi),
 googletest, fmt, [args](https://github.com/Taywee/args/)等。
-可以使用[pkg](https://github.com/genshen/pkg/)依赖管理工具下载依赖包或者直接将对应依赖包导入到 SuperMD源码`vendor`目录。
+可以使用[pkg](https://github.com/genshen/pkg/)依赖管理工具下载依赖包或者直接将对应依赖包导入到 SupraMD源码`vendor`目录。
 
 其中，`pkg`工具的安装见 https://github.com/genshen/pkg/。
 
@@ -79,12 +79,12 @@ pkg fetch
 pkg install
 ```
 
-用户可以从 OSDN 上的 https://osdn.net/pkg/misa-md/dependencies 页面获取各个 SuperMD 版本的依赖包，然后通过 `pkg import` 导入。  
+用户可以从 OSDN 上的 https://osdn.net/pkg/misa-md/dependencies 页面获取各个 SupraMD 版本的依赖包，然后通过 `pkg import` 导入。  
 例如，如果需要下载 MISA—MD 主分支（master 分支）对应的依赖包，可以通过链接 https://osdn.net/dl/misa-md/misamd-latest-20210413-161112.942981.tar 从[OSDN](https://osdn.net/pkg/misa-md/dependencies) 上下载。
 
 ### 2.3 直接解压依赖包
 
-直接导入依赖是将已有的依赖压缩包解压解压 SuperMD 的源码的`vendor`目录。
+直接导入依赖是将已有的依赖压缩包解压解压 SupraMD 的源码的`vendor`目录。
 
 假设依赖压缩包文件名为：vendor-20190725-003851.426644.tar, 可以通过以下命令加入依赖包:
 ```bash

@@ -5,7 +5,7 @@ title: "准备势表文件"
 sidebar_label: "准备势表文件"
 ---
 
-SuperMD 使用EAM势进行原子间的力的计算, 在开始运行之前，需要准备EAM势函数表。
+SupraMD 使用EAM势进行原子间的力的计算, 在开始运行之前，需要准备EAM势函数表。
 
 这里的例子使用[www.ctcms.nist.gov](https://www.ctcms.nist.gov/potentials/Download/Fe-Cu-Ni-GB/FeCuNi.eam.alloy) 提供的势表文件。
 

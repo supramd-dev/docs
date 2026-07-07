@@ -7,18 +7,18 @@ sidebar_label: "编译构建: 添加 sunway 支持"
 
 
 ## 准备额外的源码
-为了支持在神威上运行 SuperMD，在开始构建之前，除了 CPU 版本所需的依赖包外，还需要获取几个额外的源码包： 
-- SuperMD-sunway: https://git.hpcer.dev/HPCer/SuperMD/SuperMD-sunway ，SuperMD 核心计算模块的在神威平台上的实现。
+为了支持在神威上运行 SupraMD，在开始构建之前，除了 CPU 版本所需的依赖包外，还需要获取几个额外的源码包： 
+- SupraMD-sunway: https://git.hpcer.dev/HPCer/SupraMD/SupraMD-sunway ，SupraMD 核心计算模块的在神威平台上的实现。
 
 目录结构如下：
 ```bash
 workspace
-  |-- SuperMD # MISA MD source for CPU
+  |-- SupraMD # MISA MD source for CPU
   |-- misa-md-sunway
 ```
 
 ## 构建前的准备
-除了构建 CPU 版本所需的环境和工具外，构建支持神威从核的 SuperMD 还需要以下环境：
+除了构建 CPU 版本所需的环境和工具外，构建支持神威从核的 SupraMD 还需要以下环境：
 1. 要求编译器支持 C++11。在太湖之光上，可以用 sw5gcc/sw5g++ (基于gcc 5.3 开发)或者 mpiswgcc/mpiswg++。  
 
 :::tip
@@ -37,8 +37,8 @@ pkg fetch
 pkg install --sh
 ```
 
-## 构建支持 sunway 从核的 SuperMD
-进入 `super` 目录，然后执行以下命令以构建支持 GPU/DCU 硬件的 SuperMD。
+## 构建支持 sunway 从核的 SupraMD
+进入 `super` 目录，然后执行以下命令以构建支持 GPU/DCU 硬件的 SupraMD。
 
 ```bash
 # in M directory
@@ -61,4 +61,4 @@ cmake --build ./cmake-build-sunway/ -j 4
 如果你需要生成优化版本的可执行文件，可以在 cmake 配置命令中加上 `-DCMAKE_BUILD_TYPE=Release` 选项，
 这样 cmake 在调用编译器进行编译和链接时就会使用优化选项（如 `-O3` 选项）。
 :::
-编译完成后，即可在 SuperMD 的 `cmake-build-sunway/bin` 目录找到支持在 sunway 从核加速硬件上运行的 msiamd 可执行文件。
+编译完成后，即可在 SupraMD 的 `cmake-build-sunway/bin` 目录找到支持在 sunway 从核加速硬件上运行的 msiamd 可执行文件。

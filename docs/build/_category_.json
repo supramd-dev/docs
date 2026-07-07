@@ -1,8 +1,8 @@
 {
-  "label": "Build SuperMD",
+  "label": "Build SupraMD",
   "position": 3,
   "link": {
     "type": "generated-index",
-    "description": "build supermd."
+    "description": "build supramd."
   }
 }

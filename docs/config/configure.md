@@ -5,16 +5,16 @@ title: "配置文件"
 sidebar_label: "配置文件"
 ---
 
-SuperMD 从 v0.4.0 开始，使用 [yaml](https://yaml.org) 格式开始作为配置文件的格式（v0.2.0 和 v0.3.x 使用 [toml](https://github.com/toml-lang/toml) 格式)。
+SupraMD 从 v0.4.0 开始，使用 [yaml](https://yaml.org) 格式开始作为配置文件的格式（v0.2.0 和 v0.3.x 使用 [toml](https://github.com/toml-lang/toml) 格式)。
 
 ## 1.示例
 
-以下展示了 SuperMD 配置文件的部分示例：
+以下展示了 SupraMD 配置文件的部分示例：
 ```yaml
-# <a href='https://yaml.org'>yaml</a> configure file for SuperMD application,
+# <a href='https://yaml.org'>yaml</a> configure file for SupraMD application,
 # written by <a href='mailto:genshenchu@gmail.com'>genshen</a>"
 
-title: "SuperMD Configure File"
+title: "SupraMD Configure File"
 version: "0.4.0"
 
 simulation:
@@ -109,13 +109,13 @@ stages:
 ```
 
 ## 2.使用配置文件
-你可以在运行 SuperMD 程序时，通过命令行参数指定配置文件路径，程序能够读取配置文件，以进行后续模拟，例如：
+你可以在运行 SupraMD 程序时，通过命令行参数指定配置文件路径，程序能够读取配置文件，以进行后续模拟，例如：
 
 ```bash
-mpirun -n 4 /path/of/supermd  -c /path/of/config.yaml
+mpirun -n 4 /path/of/supramd  -c /path/of/config.yaml
 ```
 或者：
 
 ```bash
-mpirun -n 4 /path/of/supermd  --conf=/path/of/config.yaml
+mpirun -n 4 /path/of/supramd  --conf=/path/of/config.yaml
 ```

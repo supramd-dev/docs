@@ -8,10 +8,10 @@ sidebar_label: "编译构建: 添加 GPU/DCU 支持"
 import AsciinemaPlayer from '@site/src/components/AsciinemaPlayer';
 import MDBuildDCU from './imgs/md-build.dcu.cast';
 
-SuperMD 对英伟达 GPU、AMD GPU 及 DCU 等硬件的支持是通过 HIP 实现的。  
+SupraMD 对英伟达 GPU、AMD GPU 及 DCU 等硬件的支持是通过 HIP 实现的。  
 [HIP](https://github.com/ROCm-Developer-Tools/HIP) 是 AMD 推动的用于在 NVIDIA GPUs、AMD GPU 和 DCU 等硬件上进行加速计算的编程模型，其 API 也十分接近 NVIDIA CUDA，并支持将 CUDA 代码转化为 HIP 代码。
 目前，HIP 支持 NVIDIA CUDA 和 [AMD ROCm](https://rocmdocs.amd.com/en/latest/index.html) 平台。
-SuperMD 则是通过 HIP 来实现对多种加速硬件的计算支持。
+SupraMD 则是通过 HIP 来实现对多种加速硬件的计算支持。
 具体有关 HIP 的安装和环境配置请参见[相关文档](https://github.com/ROCm-Developer-Tools/HIP/blob/main/INSTALL.md)。
 
 <AsciinemaPlayer 
@@ -24,13 +24,13 @@ SuperMD 则是通过 HIP 来实现对多种加速硬件的计算支持。
 
 
 ## 准备额外的源码
-为了支持在 GPU 上运行 SuperMD，在开始构建之前，除了 CPU 版本所需的依赖包外，还需要获取几个额外的源码包： 
+为了支持在 GPU 上运行 SupraMD，在开始构建之前，除了 CPU 版本所需的依赖包外，还需要获取几个额外的源码包： 
 - hip-potential: https://github.com/misa-md/hip-potential ，支持 HIP 的 EAM 势函数计算库；
-- SuperMD-hip: https://git.hpcer.dev/HPCer/MISA-MD/misa-md-hip ，SuperMD 核心计算模块的 HIP 实现。
+- SupraMD-hip: https://git.hpcer.dev/HPCer/MISA-MD/misa-md-hip ，SupraMD 核心计算模块的 HIP 实现。
 
 ### 添加 hip-potential 包
 hip-potential 采用 HIP 编写的，用于在 GPU 卡上进行势函数计算的库和接口。
-为了添加 hip-potential 包，可通过编辑 SuperMD 的 `pkg.yaml` 文件，在其中加入以下内容:
+为了添加 hip-potential 包，可通过编辑 SupraMD 的 `pkg.yaml` 文件，在其中加入以下内容:
 ```diff
 dependencies:
   packages:
@@ -46,12 +46,12 @@ dependencies:
 ### misa-md-hip 包
 对于 misa-md-hip 包，可直接下载源码，我们假设 MSIA-MD 和 misa-md-hip 放置的路径如下:
 ```bash
-|-- SuperMD  # 通用 SuperMD 源码
-|-- misa-md-hip  # SuperMD 核心计算的 HIP 实现 (即 misa-md-hip 包)
+|-- SupraMD  # 通用 SupraMD 源码
+|-- misa-md-hip  # SupraMD 核心计算的 HIP 实现 (即 misa-md-hip 包)
 ```
 
 ## 构建前的准备
-除了构建 CPU 版本所需的环境和工具外，构建支持 GPU/DCU 的 SuperMD 还需要以下环境：
+除了构建 CPU 版本所需的环境和工具外，构建支持 GPU/DCU 的 SupraMD 还需要以下环境：
 1. HIP 请确保系统上安装了 HIP，且版本需要 3.5 及以上版本；并配置好了 `HIP_PATH` 环境变量（如：`export HIP_PATH=/opt/compilers/rocm/4.2.0`）。
    此外，还需要检查并确保 `hipcc` 编译器在 `PATH` 环境变量中。  
 2. 如果您的硬件平台是英伟达的 GPU，请确保安装且正确配置了 CUDA 并配置了 `CUDA_PATH` 环境变量（如：`export CUDA_PATH=/opt/tools/cuda/10.0`）；  
@@ -66,8 +66,8 @@ dependencies:
 如果目标平台是 CUDA，可以通过 `CUDA_PATH` 环境变量来指定自定义的 CUDA 安装路径，如 `CUDA_PATH=/opt/tools/cuda/10.0`。
 :::
 
-## 构建支持 GPU/DCU 硬件的 SuperMD
-进入 `supermd` 目录，然后执行以下命令以构建支持 GPU/DCU 硬件的 SuperMD。
+## 构建支持 GPU/DCU 硬件的 SupraMD
+进入 `supramd` 目录，然后执行以下命令以构建支持 GPU/DCU 硬件的 SupraMD。
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -82,7 +82,7 @@ import TabItem from '@theme/TabItem';
 <TabItem value="rocm">
 
 ```bash
-# in supermd directory
+# in supramd directory
 export CC=clang
 export CXX=clang++
 cmake -B./cmake-build-hip -S./  \
@@ -99,7 +99,7 @@ cmake --build ./cmake-build-hip/ -j 4
 <TabItem value="nvidia">
 
 ```bash
-# in supermd directory
+# in supramd directory
 export CC=clang
 export CXX=clang++
 cmake -B./cmake-build-hip/ -S./ \
@@ -125,9 +125,9 @@ cmake --build ./cmake-build-hip/ -j 4
 如果你需要生成优化版本的可执行文件，可以在 cmake 配置命令中加上 `-DCMAKE_BUILD_TYPE=Release` 选项，
 这样 cmake 在调用编译器进行编译和链接时就会使用优化选项（如 `-O3` 选项）。
 :::
-编译完成后，即可在 SuperMD 的 `cmake-build-hip/bin` 目录找到支持在 GPU 或 DCU 硬件上运行的 msiamd 可执行文件。
+编译完成后，即可在 SupraMD 的 `cmake-build-hip/bin` 目录找到支持在 GPU 或 DCU 硬件上运行的 msiamd 可执行文件。
 
-关于运行支持 GPU 或 DCU 硬件的 SuperMD 程序的相关配置，请参见 xxx
+关于运行支持 GPU 或 DCU 硬件的 SupraMD 程序的相关配置，请参见 xxx
 
 ## 常见问题 (ROCm)
 1.  "undefined hidden symbol"
@@ -145,7 +145,7 @@ git.hpcer.dev/HPCer/MISA-MD/hip-potential@v0.1.0@hip_pot:
       features: ["HIP_POT_TEST_BUILD_ENABLE_FLAG=OFF", "HIP_HIPCC_FLAGS=-fgpu-rdc"]
 ```
 
-当然，在编译 SuperMD 代码时，也同样需要指定该编译选项。在 CMake 配置阶段，指定 `-DHIP_HIPCC_FLAGS="-fgpu-rdc"` 即可。
+当然，在编译 SupraMD 代码时，也同样需要指定该编译选项。在 CMake 配置阶段，指定 `-DHIP_HIPCC_FLAGS="-fgpu-rdc"` 即可。
 
 
 2. undefined reference to `d_domain'  

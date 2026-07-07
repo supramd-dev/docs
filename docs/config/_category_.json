@@ -1,8 +1,8 @@
 {
-  "label": "Config SuperMD",
+  "label": "Config SupraMD",
   "position": 5,
   "link": {
     "type": "generated-index",
-    "description": "config supermd."
+    "description": "config supramd."
   }
 }

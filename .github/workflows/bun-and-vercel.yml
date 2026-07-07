@@ -34,7 +34,7 @@ jobs:
         env:
           CI: true
           DOC_DEPLOY_PATH: "/MDoc/"
-          DOC_GIT_REPO: "https://github.com/supermd/docs"
-          DOC_SITE_URL: "https://supermd.github.io"
-          SOURCE_GIT_REPO: "https://github.com/supermd/supermd"
+          DOC_GIT_REPO: "https://github.com/supramd/docs"
+          DOC_SITE_URL: "https://supramd.github.io"
+          SOURCE_GIT_REPO: "https://github.com/supramd/supramd"
 
