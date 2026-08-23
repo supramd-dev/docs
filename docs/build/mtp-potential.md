@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 id: mtp-potential
 title: MTP 机器学习势函数集成
 sidebar_label: MTP 势函数
