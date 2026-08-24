@@ -18,7 +18,13 @@ module load cmake/3.25.0
 另需要保证 [pkg](https://github.com/genshen/pkg) 工具已经安装。
 
 ## 开始构建
-可以通过如下的命令构建 SupraMD，其中`MD_TH_ARCH_ENABLE_FLAG` 表示启用 hthreads和DSP硬件支持，`MD_TH_ARCH_SRC_PATH` 指定DSP异构源代码位置。
+和其他平台一样，在开始之前，需要对依赖包进行构建：
+```bash
+pkg fetch
+pkg install
+```
+
+依赖包构建完成后，可以通过如下的命令构建 SupraMD，其中`MD_TH_ARCH_ENABLE_FLAG` 表示启用 hthreads和DSP硬件支持，`MD_TH_ARCH_SRC_PATH` 指定DSP异构源代码位置。
 
 ```bash
 cmake -B./cmake-build-hthreads -S./ \
