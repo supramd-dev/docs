@@ -32,17 +32,18 @@ pkg install
 
 #### mlip-3 的 GPU 支持
 如果需要启用 mtp 的 GPU 支持，需要按如下步骤进行：
-1. 编辑 pkg.yaml 文件：
+1. 编辑 pkg.yaml 文件：  
 ```diff
     git.hpcer.dev/HPCer/MISA-MD/mtp3@v0.2.0@mtp: # use main branch
 -     features: ["MTP_ENABLE_HIP_ARCH=OFF"] # hip version
 +     features: ["MTP_ENABLE_HIP_ARCH=ON"] # hip version
       optional: true
 ```
-2. 和上面CPU 版本的mlip-3 的安装一样，重新执行 pkg fetch & pkg install
+2. 和上面CPU 版本的mlip-3 的安装一样，重新执行 pkg fetch & pkg install  
+在开始之前，需要按照 [compiling-with-hip](compiling-with-hip)中对系统环境的要求检查相关的GPU环境（编译器等）。  
 ```bash
 pkg clean --all
-pkg fetch --features=mtp
+pkg fetch --features=mtp,hip
 pkg install
 ```
 
@@ -63,3 +64,7 @@ pkg install
     ```
   </TabItem>
 </Tabs>
+
+:::note
+在编译后，如果需要运行针对 mlip-3 的 GPU 版本的MD，和[通用的GPU支持](compiling-with-hip)一样，需要在命令行指定 `--acc-gpu` 选项。
+:::
