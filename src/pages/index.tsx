@@ -21,7 +21,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro/overview">
-            SuperMD (MISA-MD) Tutorial
+            SupraMD (MISA-MD) Tutorial
           </Link>
         </div>
       </div>
