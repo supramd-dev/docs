@@ -89,6 +89,14 @@ const config: Config = {
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
+          type: 'docsVersionDropdown',
+          versions: {
+            current: {label: 'Unreleased Version 2026.02'},
+            '2026.01': {label: 'Version 2026.01'},
+          },
+          position: 'right',
+        },
+        {
           href: 'https://github.com/supramd-dev/docs',
           label: 'GitHub',
           position: 'right',
@@ -143,7 +151,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['bash'],
+      additionalLanguages: ['bash', 'diff'],
     },
   } satisfies Preset.ThemeConfig,
   plugins:[
