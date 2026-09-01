@@ -94,14 +94,15 @@ stages:
     thermo_logs:
       use: my_thermo
       every_steps: 2
-    #    del_atoms:
-    #      region: [ 25.0, 25.0, 25.0, 80.4, 80.4, 80.4 ]
-    #      step: 4 # step relative to current stage.
-    set_v:
-      collision_step: 2  # unsigned long type, step relative to current stage, not global steps.
-      lat: [2, 2, 2, 0]  # int array type
-      energy: 6.8  # double, unit: eV, default: 0
-      direction: [1.0, 1.0, 1.0]  # double array type, pka direction
+    actions: # actions applied in this stage
+      # del_atoms: # delete atoms in a region
+      #   region: [ 25.0, 25.0, 25.0, 80.4, 80.4, 80.4 ]
+      #   step: 4 # step relative to current stage.
+      set_v: # set the velocity of the PKA atom (cascade collision)
+        step: 2  # step relative to current stage, not global steps.
+        lat: [2, 2, 2, 0]  # int array type, lattice position of the PKA atom
+        energy: 6.8  # double, unit: eV, default: 0
+        direction: [1.0, 1.0, 1.0]  # double array type, pka direction
 
   - name: run
     step_length: 0.001

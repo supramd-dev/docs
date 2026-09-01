@@ -73,11 +73,12 @@ stages:
   - name: collision
     step_length: 0.0001
     steps: 10000
-    set_v:
-      collision_step: 2  # unsigned long type, step relative to current stage, not global steps.
-      lat: [40, 40, 40, 0]  # int array type
-      energy: 15000.0  # double, unit: eV, default: 0
-      direction: [1.0, 3.0, 5.0]  # double array type, pka direction
+    actions:
+      set_v: # set the velocity of the PKA atom (cascade collision)
+        step: 2  # step relative to current stage, not global steps.
+        lat: [40, 40, 40, 0]  # int array type, lattice position of the PKA atom
+        energy: 15000.0  # double, unit: eV, default: 0
+        direction: [1.0, 3.0, 5.0]  # double array type, pka direction
 
   - name: relax
     step_length: 0.0005
@@ -91,10 +92,11 @@ stages:
 ### 配置级联碰撞
 在模拟的碰撞阶段(第二个阶段)，可以配置级联碰撞的参数。
 该阶段的时间步长一般比较小，例如 0.0001 ps (如果能量高于30 kEv，步长还可以设置为 0.00005ps)；时间步数一般大于10000步。  
-PKA 相关的参数设置说明如下：
-- PKA 能量通过 `set_v.energy` 指定，单位为电子伏特。实际裂变堆中，PKA 能量一般不超过 50 KeV。
-- PKA 位置(通过 `set_v.lat` 指定)一般可以设置为位于模拟box中间(例如模拟box为 `[80,80,80]`，则PKA位置可以设置为`[40, 40, 40, 0]`(第四个参数0无实际意义) )。 
-- PKA 速度方向通过 `set_v.direction` 设置，例如速度方向设置为`[1.0, 3.0, 5.0]`，则 PKA 速度和向量⟨1, 3, 5⟩平行。
+级联碰撞通过 `actions.set_v` 配置，PKA 相关的参数设置说明如下：
+- PKA 能量通过 `actions.set_v.energy` 指定，单位为电子伏特。实际裂变堆中，PKA 能量一般不超过 50 KeV。
+- PKA 位置(通过 `actions.set_v.lat` 指定)一般可以设置为位于模拟box中间(例如模拟box为 `[80,80,80]`，则PKA位置可以设置为`[40, 40, 40, 0]`，其中第 4 项为子晶格索引，0 表示单胞角上的原子，非 0 值（如 1）表示体心位置的原子)。 
+- PKA 速度方向通过 `actions.set_v.direction` 设置，例如速度方向设置为`[1.0, 3.0, 5.0]`，则 PKA 速度和向量⟨1, 3, 5⟩平行。
+- 碰撞发生的时间步通过 `actions.set_v.step` 指定（相对于该 stage 的时间步）。
 
 
 ## 模拟结果后处理

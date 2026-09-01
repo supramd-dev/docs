@@ -198,7 +198,7 @@ sidebar_label: "配置项说明"
 
 ## STAGES
 stage允许一个模拟流程可以分为若干个stages，借鉴自 gitlab-ci 和 github action。每个 stage 中依据该stage的配置参数执行若干时间步。  
-目前 stage 中可以配置时间步、时间步长等参数以及rescale、PKA级联碰撞等操作。
+目前 stage 中可以配置时间步、时间步长、系综（ensemble）等参数，以及 dump、热力学输出、rescale、actions（盒子变形、删除原子、设置速度、PKA 级联碰撞等）等操作。
  
 ### stage[].name
 类型：String  
@@ -214,75 +214,10 @@ stage允许一个模拟流程可以分为若干个stages，借鉴自 gitlab-ci �
 说明：该 stage 执行的模拟所使用的时间步长，如不指定则使用默认时间步长(由`simulation.def_timesteps_length`指定);
 
 ### stage[].ensemble
-设置该stage 所采用的系综(ensemble)。  
+设置该 stage 所采用的系综（ensemble），即该 stage 内对体系温度、压力等热力学量的控制方式。
+系综支持 `none`、`nve`、`nvt`、`npt_mttk` 四种类型，其中 `npt_mttk` 支持 `P_iso`（各向同性）、`P_aniso`（各向异性）、`P_xyz`（按轴）三种压力控制模式。
 
-#### stage[].ensemble.type
-类型：String  
-说明：该 stage 所采用的系综,可以选择 `nve`, `nvt`, `npt_mttk`, 或 `none`;
-其中, `none` 指, 该stage内, 不给原子施加任何作用, 原子也不会运行；`npt_mttk` 是 MTTK 方法的 NPT系综（目前NPT系综的标准模型）。
-
-#### stage[].ensemble.nvt
-设置 NVT 系综相关参数。
-
-##### stage[].ensemble.nvt.type
-- 类型：String  
-- 说明：设置系综采用的算法，可选 `nose-hoover`。
-
-##### stage[].ensemble.nvt.T_target
-- 类型：Float 
-- 说明：设置 NVT 控温的目标温度。
-
-##### stage[].ensemble.nvt.type
-- 类型：Float 
-- 说明：nose-hoover 算法中的 τ 参数。
-
-#### stage[].ensemble.npt_mttk
-设置 MTTK 方法的 NPT 系综相关参数。当 `stage[].ensemble.type` 为 `"npt_mttk"` 时，该配置块生效。
-该系综通过 Martyna-Tuckerman-Tobias-Klein 方法同时控制体系的温度和各向同性/各向异性压力。
-
-##### stage[].ensemble.npt_mttk.tchains
-- 类型：Integer  
-- 说明：温度热浴的 Nosé-Hoover 链长。默认值通常为 3。链长越大，对复杂体系（如高分子、液态水）的遍历性越好，但计算开销略增。
-
-##### stage[].ensemble.npt_mttk.pchains
-- 类型：Integer  
-- 说明：压力热浴的 Nosé-Hoover 链长。默认值通常为 3。控制压力耦合自由度的热浴链数目。
-
-##### stage[].ensemble.npt_mttk.T
-设置温度控制参数。温度可以在模拟过程中从 `T_begin` 线性变化到 `T_end`，若两者相等则实现恒温控制。
-
-- T_begin：Float，模拟初始时的目标温度（单位：K）。
-- T_end：Float，模拟结束时的目标温度（单位：K）。若与 `T_begin` 相同，则为恒温 NPT；不同则为变温模拟。
-- T_damp：Float，温度阻尼时间参数（单位为 ps，与模拟时间单位一致）。
-
-:::note[参数 T_damp 的设置 Tips]
-参数 T_damp 对应于 Nosé-Hoover 热浴的弛豫时间常数 τ。值越小，热浴与系统耦合越强，控温越严格；过小可能导致振荡，过大则温度涨落大、平衡缓慢。一般取时间步长的几十到几百倍（例如 0.1 ps）。
-:::
-
-##### stage[].ensemble.npt_mttk.P_iso
-设置各向同性压力控制参数。压力可以在模拟过程中从 `P_begin` 线性变化到 `P_end`，若两者相等则维持恒压。
-
-- P_begin：Float，模拟初始时的目标压力（单位与模拟体系一致，为 bar）。`0.0` 表示常压（真空/无外加应力）。
-- P_end：Float，模拟结束时的目标压力。若与 `P_begin` 相同则为恒压模拟。
-- P_damp：Float，压力阻尼时间参数（单位与模拟时间单位一致，为 ps）。
-
-:::note[参数 P_damp 的设置 Tips]
-参数 P_damp 是气压计（barostat）的弛豫时间常数。
-值越小，压力控制越紧；一般取时间步长的数百倍（例如 1.0 ps），防止与热浴耦合竞争导致不稳定。
-:::
-
-##### stage[].ensemble.npt_mttk.P_aniso
-设置各向异性压力控制参数。
-当体系需要独立控制 x、y、z 三个方向的压力时使用，如模拟界面、薄膜、固体相变等非对称体系。
-
-- Px_begin, Py_begin, Pz_begin：Float，三个方向初始目标压力（单位同前）。`0.0` 表示该方向应力为零。
-- Px_end, Py_end, Pz_end：Float，三个方向结束时的目标压力。可为每个方向设定相同或不同的最终值。
-- Px_damp, Py_damp, Pz_damp：Float，三个方向各自的气压计阻尼时间常数（单位 ps）。通常设为相同值，如 2.0 ps，也可按各向异性需求独立调节。
-
-:::note[参数 P_aniso 的设置 Tips]
-对于 `P_aniso` 选项与 `P_iso` 互斥，只选其一）。
-若启用此项，应注释掉 `P_iso`。
-:::
+系综的详细配置说明，请参见[系综（Ensemble）配置项说明](./configure-ensemble.md)。
 
 ### stage[].rescale
 说明：每隔一定时间步进行一次rescale，将体系温度重新设置为给定的温度; 该选项指定rescale 的相关参数;  
@@ -300,24 +235,31 @@ stage允许一个模拟流程可以分为若干个stages，借鉴自 gitlab-ci �
 类型：Integer  
 说明：执行 rescale 操作的时间步间隔; 
 
-### stage[].setv
-说明：级联碰撞的相关参数，用于给某些原子设置速度;  
+### stage[].actions
+说明：在该 stage 内启用的一组动作（action）。目前支持以下 action：
+- `deform`：对模拟盒子沿指定轴施加单轴拉伸（变形），用于应力-应变计算；
+- `del_atoms`：在指定时间步删除指定区域内的所有原子；
+- `velocity`：在指定时间步将指定区域内所有原子的速度设置为给定的速度向量；
+- `set_v`：在指定时间步给指定晶格位置上的原子（PKA）设置速度，用于级联碰撞。
 
-#### stage[].setv.collision_step
-类型：Integer;  
-说明：指定级联碰撞开始的时间步，该时间步时相对于该stage的，而非全局时间步;  
+:::note
+之前的 `set_v` 配置（`set_v.collision_step`、`set_v.lat`、`set_v.energy`、`set_v.direction`）已经移动到 `stage[].actions.set_v` 下，且原来的 `collision_step` 字段更名为 `step`。
+:::
 
-#### stage[].setv.lat
-类型：Integer 数组，长度: 4;  
-说明：级联碰撞PKA原子位置，数组第4项为偏移值，一般设为0;  
+actions 的详细配置说明，请参见 [Actions 配置项说明](./configure-actions.md)。
 
-#### stage[].setv.energy
-类型：Float  
-说明：用于设置级联碰撞PKA原子能量，单位eV，直接叠加到对应原子的速度上; 
+### stage[].thermo_logs
+说明：热力学信息输出的相关参数配置;
+需要说明的是，该配置仅针对当前的 stage 生效，即作用域仅限制在本 stage，
+如果需要在其他 stage 中输出热力学信息，需要在其他 stage 中配置对应的 `thermo_logs`。
 
-#### stage[].setv.direction
-类型：Integer 数组，长度: 3;  
-说明：用于设置PKA能量对应的速度在三个维度(x,y,z)的分量，或者说是PKA入射方向; 
+#### stage[].thermo_logs.use
+类型：String  
+说明：引用的 [热力学输出 preset](#outputthermopresets) 中的名称，采用该 preset 中的配置（输出哪些热力学量等）进行热力学信息的输出;
+
+#### stage[].thermo_logs.every_steps
+类型：Integer  
+说明：每间隔该项指定的时间步数，输出一次热力学信息。
 
 ### stage[].dump
 说明：dump 体系粒子信息的相关参数配置; 
