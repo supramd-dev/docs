@@ -1,0 +1,2 @@
+docs/run/img/ovito.png filter=lfs diff=lfs merge=lfs -text
+versioned_docs/version-2026.01/run/img/ovito.png filter=lfs diff=lfs merge=lfs -text
