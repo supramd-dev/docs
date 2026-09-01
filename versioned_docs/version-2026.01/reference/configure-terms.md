@@ -1,6 +1,6 @@
 ---
-sidebar_position: 2
-id: configure-terms
+sidebar_position: 1
+id: main_ref
 title: "配置项说明"
 sidebar_label: "配置项说明"
 ---

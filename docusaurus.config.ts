@@ -87,6 +87,12 @@ const config: Config = {
           position: 'left',
           label: 'Tutorial',
         },
+        {
+          type: 'docSidebar',
+          sidebarId: 'reference',
+          position: 'left',
+          label: 'Reference',
+        },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
           type: 'docsVersionDropdown',
