@@ -93,6 +93,12 @@ const config: Config = {
           position: 'left',
           label: 'Reference',
         },
+        {
+          type: 'docSidebar',
+          sidebarId: 'apis',
+          position: 'left',
+          label: 'APIs',
+        },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
           type: 'docsVersionDropdown',
@@ -157,7 +163,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['bash', 'diff'],
+      additionalLanguages: ['bash', `cmake`, 'diff'],
     },
   } satisfies Preset.ThemeConfig,
   plugins:[
