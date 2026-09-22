@@ -56,6 +56,14 @@ sidebar_label: "配置项说明"
 类型：Float;  
 说明：创建的体系的温度；仅 `creation.create_phase` 为 true 时有效;  
 
+### creation.create_dist
+| 配置项 | 说明 |
+| -- | -- |
+| `uniform` | 使用均匀分布初始化原子速度；默认值。 |
+| `gauss` | 使用高斯分布初始化原子速度。初始化后程序会去除体系的整体质心速度，并根据 `creation.create_t_set` 对速度进行温度重标定。 |
+
+该配置项仅在 `creation.create_phase` 为 true 时生效，可选值为 `uniform` 或 `gauss`。
+
 ### creation.alloy
 说明：合金元素的相关配置; 该部分仅 `creation.create_phase` 为 true 时有效;  
 
