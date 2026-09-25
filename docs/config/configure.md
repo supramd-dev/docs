@@ -19,19 +19,21 @@ version: "0.4.0"
 
 simulation:
   phasespace: [50, 50, 50] # box size, the count of lattice at each dimension. #int array type
-  cutoff_radius_factor: 1.96125  # the real cutoff radius is cutoff_radius_factor*lattice_const , double type
+  cutoff_radius: 5.6 # the real cutoff radius, double type
   lattice_const: 2.85532   # lattice const, double type
   def_timesteps_length: 0.001  # simulation time steps length for each timestep, double type.
 
 potential: # potential file config
   format: "setfl" # string type
-  type: "eam/alloy" # string type. Potential type used for simulation. Its value can be "eam/fs" or "eam/alloy".
+  type: "eam/alloy" # string type. Potential type used for simulation. Its value can be "eam/fs" or "eam/alloy", "lj/cut", "mlip2".
   file_path: "FeCuNi.eam.alloy" # string type
 
 creation: #  create atoms.
   create_phase: true  # boolean type. true: create atoms, false: ignore.
   create_seed: 466953 # int type, for create mode
   create_t_set: 600 # temperature double type, for creation mode
+  lattice: # lattice structure used for creating atoms
+    style: bcc # or fcc, or hcp
   alloy: # types of alloy
     create_seed: 1024 # random seek for creating atoms in alloy material.
     types: # "weight" must be integer type. e.g. Fe:Cu:Ni = 95:2:3
@@ -56,7 +58,7 @@ output:
     presets:
       - name: my_dump
         region: [ 25.0, 25.0, 25.0, 80.4, 80.4, 80.4 ]
-        mode: "bin" # output mode,string, "bin"(write all atom into a binary file) or "debug" (output atoms directly), or "dump" (the same as lammps dump);
+        mode: "bin" # output mode,string, "bin"(write all atom into a binary file) or "direct" (output atoms directly), or "dump" (the same as lammps dump);
         file_path: "misa_mdl.{}.out" # string,filename or path of dumped atoms, default value is "misa_mdl.out"
         by_frame: true # bool type, used in copy mode, dump to multiple files, one file for each frame.
         with: [location, velocity] # or "force", select what to dump
@@ -67,6 +69,7 @@ output:
   thermo:
     presets:
       - name: my_thermo
+        output_target: md.csv # can be "stdout" or "xxx.yaml", or "xxx.csv" file
         with: [step, time, temp, pe, ke, etotal]
   logs:
     logs_mode: "console" # logs mode, string; values: "console" output will be printed on console/terminal, "file" logs will be saved in files.
@@ -120,3 +123,9 @@ mpirun -n 4 /path/of/supramd  -c /path/of/config.yaml
 ```bash
 mpirun -n 4 /path/of/supramd  --conf=/path/of/config.yaml
 ```
+
+## 3.更多说明
+
+配置文件中各个字段的完整说明请参见[配置项说明](../reference/configure-terms.md)，
+以及[系综（Ensemble）配置项说明](../reference/configure-ensemble.md)、[Actions 配置项说明](../reference/configure-actions.md)。
+程序运行时的命令行参数请参见[运行 SupraMD](../run/run-md.md)。
