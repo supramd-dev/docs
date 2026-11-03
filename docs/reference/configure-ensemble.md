@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 2
 id: configure-ensemble
 title: "系综（Ensemble）配置项说明"
 sidebar_label: "系综（Ensemble）配置项说明"

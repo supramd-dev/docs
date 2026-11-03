@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 id: configure-compute
 title: "Compute 配置项说明"
 sidebar_label: "Compute 配置项说明"
@@ -187,3 +187,38 @@ coord(i-j)(r) = mult * ( distance r 以内 j 原子的平均个数 )
 因此计算本身不依赖于进程数（`N(i)`、`N(j)`、`V` 都是全局量。  
 不过不同进程数下浮点求和顺序不同，热扰动体系的结果不会逐位相同。
 :::
+
+:::note[与 LAMMPS 对比时，热扰动体系该看什么]
+对比两条不同轨迹的 `g(r)` 时，逐 bin 的差异主要由**系综采样**决定，而不是计数噪声，也不是实现差异：
+bin 边界会切过被热运动展宽的配位壳层，而壳层的弛豫时间远长于采样窗口，两条轨迹落在同一个 bin 里的
+原子对数本来就会不同。实测（2000 原子 BCC Fe、300 K、20 帧平均、`dr = 0.056 Å`）：采样量增加到
+10 倍（2000 步 / 200 帧），逐 bin 偏差仅从 2.4 % 降到 1.9 %；同一份代码换一种 MPI 分解，
+两个结果之间的差异（约 0.6 %）与它们同 LAMMPS 的差异（约 1.0 %）是同一量级。
+
+最直接的证据是拿 LAMMPS 自己跟自己比：同一体系、同一参数，只换随机种子跑两次 LAMMPS，
+逐 bin 的 `g(r)` 偏差中位数 0.32 %、最大 2.06 %，`coord(r)` 最大相差 0.061；
+SupraMD 换种子跑两次是 0.71 % / 2.24 % / 0.119；两个程序互相配对的 9 组则是
+0.48 % / 2.88 % / 0.121 —— 跨程序的中位数落在两种"同程序不同轨迹"之间。
+也就是说这一层次上的偏差与实现无关，只取决于比的是哪两条轨迹。
+
+因此跨程序、跨轨迹对比时应当使用与 bin 边界无关的量：
+
+* 每个配位壳层窗口内 `g(r)` 的平均值（窗口边界落在壳层之间的间隙里）；
+* 壳层间隙中点处的 `coord(r)`，即一个完整壳层的配位数，任何同密度轨迹都相同；
+* BCC 的解析配位数 8、14、26、50、58。
+
+实测中这些量在冻结晶格情形与 LAMMPS 一致到 2e-6（配位数逐位相同），
+在 300 K 情形：壳层窗口平均 `g(r)` 最大偏差 1.0 %，壳层间隙中点 `coord(r)` 最大偏差 0.02（相对 0.04 %）；
+`tests/regression/tests/03-rdf-vs-lammps` 的对比脚本正是按这个思路组织的。
+:::
+
+## 与 LAMMPS `compute rdf` 的对应关系
+
+| LAMMPS | SupraMD |
+| -- | -- |
+| `compute ID group rdf nbins itype jtype [cutoff]` | `stage[].compute.rdf`（`nbins`、`pairs[].types`、`pairs[].cutoff`） |
+| `fix ID group ave/time Nevery Nrepeat Nfreq c_ID[*] file f mode vector` | `every_steps: Nevery` + `repeat: Nrepeat`（`Nfreq = Nevery × Nrepeat`）；每 `repeat` 次采样追加一个数据块 |
+| 类型编号从 1 开始 | 类型编号从 0 开始（SupraMD 的 type `t` = LAMMPS 的 type `t + 1`） |
+| 输出文件中 `r, g, coord` 交替排列，每个输出步一个数据块 | 输出文件中所有 `g` 列在前、所有 `coord` 列在后；每个数据块给出该块的采样平均值，块前有一行 `#` 注释 |
+
+`tests/regression/tests/03-rdf-vs-lammps` 中提供了一套与 LAMMPS 逐 bin 对比的回归测试（冻结晶格与 300 K 热化体系各一组，分别用 `hash` 与 `verlet-list` 两种数据结构运行），可作为配置与对比方法的参考。

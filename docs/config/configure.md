@@ -129,5 +129,6 @@ mpirun -n 4 /path/of/supramd  --conf=/path/of/config.yaml
 ## 3.更多说明
 
 配置文件中各个字段的完整说明请参见[配置项说明](../reference/configure-terms.md)，
-以及[系综（Ensemble）配置项说明](../reference/configure-ensemble.md)、[Actions 配置项说明](../reference/configure-actions.md)。
+以及[势函数（Potential）配置项说明](../reference/configure-potential.md)、
+[系综（Ensemble）配置项说明](../reference/configure-ensemble.md)、[Actions 配置项说明](../reference/configure-actions.md)。
 程序运行时的命令行参数请参见[运行 SupraMD](../run/run-md.md)。

@@ -115,12 +115,12 @@ lj/cut #arch: cpu(verlet-list)
 
 每一行的格式为 `势函数名 #arch: 后端(支持的数据结构, ...)`，其中：
 
-- 势函数名即配置文件中 [`potential.type`](../reference/configure-terms.md#potentialtype) 的取值；
+- 势函数名即配置文件中 [`potential.type`](../reference/configure-potential.md#potentialtype) 的取值；
   第三方（`custom`）势函数显示为它的注册名，如 `example/morse`；
 - 后端为 `cpu`，或 `gpu/hip`（GPU/DCU 版本）、`dsp/hthreads`（DSP 版本）等；
 - 括号内是该后端可以配合使用的数据结构，即 `-a` / `--algo` 的取值。例如
   `eam/cd #arch: cpu(verlet-list)` 表示该势函数目前只有 CPU 实现，并且只能配合 `--algo=verlet-list` 使用，
-  详见 [CD-EAM 势函数](../reference/configure-terms.md#cd-eam-势函数)。
+  详见 [CD-EAM 势函数](../reference/configure-potential.md#cd-eam-势函数)。
 
 `--list-pot-all` 列出的是**源码中**所有势函数的所有后端，包含当前可执行文件编译时未启用的后端
 （例如纯 CPU 版本也会列出 `gpu/hip` 行），因此它的输出通常比 `--list-pot` 多几行；

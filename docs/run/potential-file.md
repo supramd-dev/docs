@@ -17,7 +17,7 @@ wget https://www.ctcms.nist.gov/potentials/Download/2009--Bonny-G-Pasianot-R-C-C
 
 ## CD-EAM 势表文件
 使用浓度相关 EAM 势（`potential.type` 为 `eam/cd`）时，需要的是二元合金的势表文件，
-即在 setfl 表之后追加了 `h(x)` 多项式系数的文件（详见 [CD-EAM 势函数](../reference/configure-terms.md#cd-eam-势函数)）。
+即在 setfl 表之后追加了 `h(x)` 多项式系数的文件（详见 [CD-EAM 势函数](../reference/configure-potential.md#cd-eam-势函数)）。
 以 Fe-Cr 的 CD-EAM 势为例，可以从 [www.ctcms.nist.gov](https://www.ctcms.nist.gov/potentials/Download/2009--Stukowski-A-Sadigh-B-Erhart-P-Caro-A--Fe-Cr/1/FeCr.cdeam) 下载：
 
 ```bash
@@ -32,4 +32,4 @@ wget https://www.ctcms.nist.gov/potentials/Download/2009--Stukowski-A-Sadigh-B-E
 - [`simulation.cutoff_radius`](../reference/configure-terms.md#simulationcutoff_radius) 与势表文件中的截断距离一致
   （该文件为 5.5 Å）；
 
-完整的配置示例见 [CD-EAM 势函数](../reference/configure-terms.md#cd-eam-势函数)。
+完整的配置示例见 [CD-EAM 势函数](../reference/configure-potential.md#cd-eam-势函数)。

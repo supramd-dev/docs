@@ -316,7 +316,7 @@ potential:
   均可使用。
 
 其余配置节与常规运行相同。运行时须指定 `--algo verlet-list`（见第 6 节）。
-完整示例见 `example/custom-potential/config.morse.yaml`，各配置项的说明见[配置项说明](../reference/configure-terms.md#potential)。
+完整示例见 `example/custom-potential/config.morse.yaml`，各配置项的说明见[配置项说明](../reference/configure-potential.md)。
 
 ### 4.2 通过 C++ API 使用
 

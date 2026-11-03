@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 id: configure-actions
 title: "Actions 配置项说明"
 sidebar_label: "Actions 配置项说明"
