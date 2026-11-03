@@ -172,7 +172,9 @@ creation:
 ## read_phase
 读取一个已有的原子体系（如 dump 文件），用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
 
-该配置块可以省略；如果保留该配置块，则其下的 `enable`、`format`、`version`、`file_path`、`init_step`、`timestep` 六个字段都必须填写。
+该配置块可以省略；如果保留该配置块，则其下的 `enable`、`version`、`file_path`、`init_step` 四个字段都必须填写，
+而 `format`、`frame_timestep` 可以省略：省略时分别取默认值（`dump`，以及读取文件中的最后一帧），
+因此旧版本的配置文件不需要修改也能继续使用。
 
 :::warning
 `read_phase.enable` 与 [`creation.create_phase`](#creationcreate_phase) 不能同时为 true，也不能同时为 false：
@@ -189,7 +191,8 @@ creation:
 ### read_phase.format
 类型：String;  
 默认值：`dump`;  
-说明：所读取文件的格式，目前支持的取值如下：
+说明：所读取文件的格式。该选项可以省略（省略时取默认值 `dump`）；
+目前支持的取值如下：
 
 | 取值 | 说明 |
 | -- | -- |
@@ -214,13 +217,13 @@ creation:
 默认值：0;  
 说明：读取原子体系后，模拟的起始时间步。一般在 restart 模拟（或者叫从检查点开始模拟）的时候会很有用，
 程序会以该时间步数作为模拟的起始时间步（同时影响热力学输出中的 `step`、`time`）。
-它与 `read_phase.timestep`（读取文件中的哪一帧）是相互独立的两个概念。
+它与 `read_phase.frame_timestep`（读取文件中的哪一帧）是相互独立的两个概念。
 
-### read_phase.timestep
+### read_phase.frame_timestep
 类型：Integer;  
 默认值：-1;  
-说明：读取文件中的哪一帧，取值为该帧的 timestep（时间步）。  
-取负数时（默认值为 `-1`）读取文件中的**最后一帧**，这通常就是 restart 想要的那一帧；
+说明：读取文件中的哪一帧，取值为该帧在文件中记录的 timestep（即文件里 `ITEM: TIMESTEP` 的值，
+而不是该帧在文件中的序号/偏移）。该选项可以省略（省略时取默认值 `-1`），取负数时（默认值为 `-1`）读取文件中的**最后一帧**，这通常就是 restart 想要的那一帧；
 取非负数时读取 timestep 等于该值的帧，文件中不存在该帧时程序会报错退出。  
 该选项仅对 `format: "dump"` 有效。
 
@@ -254,7 +257,7 @@ read_phase:
   version: 0
   file_path: "./misa_mdl.10.dump"
   init_step: 10             # 从第 10 步继续
-  timestep: -1              # 读取文件中的最后一帧
+  frame_timestep: -1        # 读取文件中的最后一帧
 ```
 :::
 

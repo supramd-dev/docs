@@ -118,7 +118,7 @@ read_phase: # read atoms data from a file. It can be used for restart.
   version: 0
   file_path: "./misa_mdl.10.dump" # string type, for read mode: the path of the file, in the format above.
   init_step: 10 # initial step for simulation
-  timestep: -1 # the frame of the file to read: the one at this timestep. -1 reads the last frame of the file.
+  frame_timestep: -1 # the frame of the file to read: the one at this timestep. -1 reads the last frame of the file.
 
 output:
   atom_dump:
