@@ -170,7 +170,7 @@ creation:
 :::
 
 ## read_phase
-读取一个已有的原子体系（如 dump 文件），用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
+读取一个已有的原子体系（如 dump 文件、extended xyz 文件），用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
 
 该配置块可以省略；如果保留该配置块，则其下的 `enable`、`version`、`file_path`、`init_step` 四个字段都必须填写，
 而 `format`、`frame_timestep` 可以省略：省略时分别取默认值（`dump`，以及读取文件中的最后一帧），
@@ -192,13 +192,14 @@ creation:
 类型：String;  
 默认值：`dump`;  
 说明：所读取文件的格式。该选项可以省略（省略时取默认值 `dump`）；
-目前支持的取值如下：
+目前支持的取值如下（程序按该取值选择解析方式，**与文件的后缀名无关**，后缀名只用于区分文件）：
 
 | 取值 | 说明 |
 | -- | -- |
 | `dump` | 文本 dump 文件（由 `ITEM: TIMESTEP`、`ITEM: NUMBER OF ATOMS`、`ITEM: BOX BOUNDS`、`ITEM: ATOMS` 等段落构成的轨迹文件），也是本程序 [`output.atom_dump.presets[].mode`](#outputatom_dumppresetsmode) 取 `dump` 时所输出的格式 |
+| `xyz` | extended xyz 文件（如 GPUMD 的 `model.xyz`：第一行为原子数、第二行为 `Lattice`、`Properties` 等键值对，其后每行一个原子），文件的读取约定见下文 |
 
-目前仅实现了 `dump` 这一种格式，填写其它取值时程序会报
+填写其它取值时程序会报
 `cannot read the file ...: the format ... is not supported yet` 并退出。
 
 ### read_phase.version
@@ -225,7 +226,7 @@ creation:
 说明：读取文件中的哪一帧，取值为该帧在文件中记录的 timestep（即文件里 `ITEM: TIMESTEP` 的值，
 而不是该帧在文件中的序号/偏移）。该选项可以省略（省略时取默认值 `-1`），取负数时（默认值为 `-1`）读取文件中的**最后一帧**，这通常就是 restart 想要的那一帧；
 取非负数时读取 timestep 等于该值的帧，文件中不存在该帧时程序会报错退出。  
-该选项仅对 `format: "dump"` 有效。
+该选项仅对 `format: "dump"` 有效；`xyz` 文件中不含 timestep，读取 `xyz` 文件时该选项被忽略（此时程序会在日志中给出提示）。
 
 #### dump 文件的读取约定
 以 `read_phase.format: "dump"` 读取体系时，有以下约定：
@@ -258,6 +259,61 @@ read_phase:
   file_path: "./misa_mdl.10.dump"
   init_step: 10             # 从第 10 步继续
   frame_timestep: -1        # 读取文件中的最后一帧
+```
+:::
+
+#### xyz 文件的读取约定
+以 `read_phase.format: "xyz"` 读取体系时，有以下约定：
+
+- **文件**：读取 [extended xyz](https://github.com/libAtoms/extxyz) 格式的文件（如 GPUMD 的 `model.xyz`）：
+  第一行为原子数，第二行为 `Lattice`、`Properties`、`pbc` 等键值对（键名不区分大小写、`=` 两侧的空格可以省略、
+  取值可以用双引号或单引号括起），其后每行一个原子。
+  程序只读入文件中的**第一个构型**（即第一行所声明的那些原子）；其后若还有其它构型（轨迹文件），
+  这部分会被跳过，程序会在日志中给出提示。
+  `pbc` 键把某个方向标为非周期性时程序也会给出提示，因为本程序的模拟在盒子的三个方向上都是周期性的。
+- **盒子**：`Lattice` 键为必填项，其九个取值为三个晶格矢量（a、b、c）的坐标，单位为 Å；
+  只支持正交盒子（晶格矢量的非对角元不为 0 时程序报错退出）；
+  文件中盒子的尺寸必须与配置的模拟盒子一致（即 `simulation.phasespace[i] × simulation.lattice_const`，
+  允许 1e-6 的相对误差），否则程序报错退出，此时请检查这两个配置项。
+  同时应保证 [`creation.lattice.style`](#creationlatticestyle) 与文件中原子所在的晶格一致，
+  因为使用 `hash` 算法时原子会被放置到最近的晶格点上。
+- **列**：`Properties` 键给出各列的名称、类型与个数，写法为 `name:type:count`（如 `species:S:1:pos:R:3`），
+  该键省略时按默认值 `species:S:1:pos:R:3` 读取；程序按列名（不区分大小写）识别下表的三列，其余列一律忽略。
+- **速度的单位**：extended xyz 中速度的单位为 Å/fs，而本程序内部使用 Å/ps，
+  因此读入的速度会被乘以 1000（程序会在日志中说明这一点）。
+- **原子类型**：文件中的 `species` 是元素名（如 `Fe`、`Cu`），程序按元素名与
+  [`creation.alloy.types[].name`](#creationalloytypes) 的**完全匹配**来确定原子的类型，
+  因此配置中原子类型的 `name` 必须与文件中的写法一致；文件中的元素在配置中没有对应类型时程序报错退出。
+- **原子位置**：坐标超出盒子的原子会被映射（wrap）回盒子内；
+  读入的原子数与文件中的原子数不一致时（例如某些原子离盒子太远、无法归属到任何进程），
+  程序会丢弃这部分原子并在日志中给出警告，此时请检查文件中的盒子与 `simulation.phasespace`、`simulation.lattice_const` 是否一致。
+- **原子编号**：extended xyz 的原子不带编号，程序按原子在文件中的行序为其编号（第一个构型的第一个原子为 1 号）。
+
+`Properties` 键中程序识别的列如下（列名不区分大小写；`type` 取 `S`（字符串）、`R`（实数）、`I`（整数）、`L`（逻辑值）之一，
+`count` 为该列的值个数）：
+
+| 列名 | 类型与个数 | 说明 |
+| -- | -- | -- |
+| `species`（也写作 `element`） | `S:1` | 必填；原子的元素名（如 `Fe`、`Cu`），用于确定原子的类型 |
+| `pos` | `R:3` | 必填；原子的坐标，单位为 Å |
+| `vel`（也写作 `velo`） | `R:3` | 可选；原子的速度，单位为 Å/fs；省略时读入的原子的速度取 0 |
+
+文件中的其它列（如 `mass`、`charge`、`group`）会被忽略，原子的质量取自配置中对应原子类型的 `mass`；
+被忽略的列仍然占用原子行中的位置，因此原子行的列数不能少于 `Properties` 键声明的列数（多出的列会被忽略）。
+必填列缺失、类型或个数不符（如 `pos:R:2`）、出现多个速度列时，程序都会报错退出。
+
+:::tip
+读取由其它程序（如 GPUMD）生成的 `model.xyz` 时，需要注意它的盒子、原子类型必须与配置文件一致
+（原子类型即 `creation.alloy.types` 中的名称），并且 `read_phase.frame_timestep` 对 `xyz` 文件无效（可以省略），
+因为 extended xyz 的构型不带 timestep。例如：
+
+```yaml
+read_phase:
+  enable: true              # 与 creation.create_phase: false 配合使用
+  format: "xyz"
+  version: 0
+  file_path: "./model.xyz"
+  init_step: 0              # 从第 0 步开始
 ```
 :::
 

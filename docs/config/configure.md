@@ -49,7 +49,7 @@ creation: #  create atoms.
 
 read_phase: # read atoms data from a file. It can be used for restart.
   enable: false
-  format: "dump" # string type, the format of the file: "dump" (a text dump file) is the only one read for now.
+  format: "dump" # string type, the format of the file: "dump" (a text dump file) or "xyz" (an extended xyz file, as the `model.xyz` of GPUMD).
   version: 0
   file_path: "./misa_mdl.10.dump" # string type, for read mode: the path of the file, in the format above.
   init_step: 10 # initial step for simulation
