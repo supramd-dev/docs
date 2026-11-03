@@ -26,7 +26,7 @@ sidebar_label: "配置项说明"
 | [simulation](#simulation) | 设置模拟原子数、晶格常数等基本属性 |
 | [potential](#potential)  | 设置原子间的相互作用势函数 |
 | [creation](#creation)   | 创建模拟体系的相关配置 |
-| [read_phase](#read_phase) | 读取配置文件的模式创建模拟体系的相关配置 |
+| [read_phase](#read_phase) | 读取已有的原子体系（如 dump 文件）来初始化模拟的相关配置 |
 | [output](#output) | 轨迹文件和热力学信息输出的预设，日志输出控制 |
 | [stages](#stages) | 模拟的 stages |
 
@@ -170,9 +170,9 @@ creation:
 :::
 
 ## read_phase
-读取一个体系，用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
+读取一个已有的原子体系（如 dump 文件），用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
 
-该配置块可以省略；如果保留该配置块，则其下的 `enable`、`version`、`file_path`、`init_step` 四个字段都必须填写。
+该配置块可以省略；如果保留该配置块，则其下的 `enable`、`format`、`version`、`file_path`、`init_step`、`timestep` 六个字段都必须填写。
 
 :::warning
 `read_phase.enable` 与 [`creation.create_phase`](#creationcreate_phase) 不能同时为 true，也不能同时为 false：
@@ -186,20 +186,77 @@ creation:
 类型：Boolean;  
 说明：是否开启读取原子体系的方式，来初始化模拟。
 
+### read_phase.format
+类型：String;  
+默认值：`dump`;  
+说明：所读取文件的格式，目前支持的取值如下：
+
+| 取值 | 说明 |
+| -- | -- |
+| `dump` | 文本 dump 文件（由 `ITEM: TIMESTEP`、`ITEM: NUMBER OF ATOMS`、`ITEM: BOX BOUNDS`、`ITEM: ATOMS` 等段落构成的轨迹文件），也是本程序 [`output.atom_dump.presets[].mode`](#outputatom_dumppresetsmode) 取 `dump` 时所输出的格式 |
+
+目前仅实现了 `dump` 这一种格式，填写其它取值时程序会报
+`cannot read the file ...: the format ... is not supported yet` 并退出。
+
 ### read_phase.version
 类型：Integer;  
 默认值：0;  
-说明：所读取的原子体系的文件格式版本号。目前仅支持 `0`。
+说明：所读取文件的格式版本号。目前仅支持 `0`；该字段当前仅用于记录（例如输出到日志中），
+文件的实际解析方式由 [`read_phase.format`](#read_phaseformat) 决定。
 
 ### read_phase.file_path
 类型：String;  
-说明：读取原子体系的文件路径。
+说明：所读取文件的路径，可以是绝对路径，也可以是相对于程序运行目录的相对路径。  
+在读取模式（`read_phase.enable: true`）下该选项为必填项。
 
 ### read_phase.init_step
 类型：Integer;  
 默认值：0;  
-说明：读取原子体系后，初始的时间步。一般在 restart 模拟（或者叫从检查点开始模拟）的时候会很有用，
+说明：读取原子体系后，模拟的起始时间步。一般在 restart 模拟（或者叫从检查点开始模拟）的时候会很有用，
 程序会以该时间步数作为模拟的起始时间步（同时影响热力学输出中的 `step`、`time`）。
+它与 `read_phase.timestep`（读取文件中的哪一帧）是相互独立的两个概念。
+
+### read_phase.timestep
+类型：Integer;  
+默认值：-1;  
+说明：读取文件中的哪一帧，取值为该帧的 timestep（时间步）。  
+取负数时（默认值为 `-1`）读取文件中的**最后一帧**，这通常就是 restart 想要的那一帧；
+取非负数时读取 timestep 等于该值的帧，文件中不存在该帧时程序会报错退出。  
+该选项仅对 `format: "dump"` 有效。
+
+#### dump 文件的读取约定
+以 `read_phase.format: "dump"` 读取体系时，有以下约定：
+
+- **盒子**：只支持正交盒子（带有 tilt 的 triclinic 盒子暂不支持）；
+  文件中盒子的尺寸必须与配置的模拟盒子一致（即 `simulation.phasespace[i] × simulation.lattice_const`，
+  允许 1e-6 的相对误差），否则程序报错退出，此时请检查这两个配置项。
+  同时应保证 [`creation.lattice.style`](#creationlatticestyle) 与文件中原子所在的晶格一致，
+  因为使用 `hash` 算法时原子会被放置到最近的晶格点上。
+- **列**：`ITEM: ATOMS` 行必须包含 `id`、`type` 列以及坐标列；
+  坐标列可以取 `x y z`（绝对坐标，优先使用）、`xs ys zs`（分数坐标）或 `xu yu zu`（未包裹坐标），三者取其一；
+  速度列 `vx vy vz` 是可选的，文件中没有速度列时读入的原子的速度取 0（例如输出时 [`with`](#outputatom_dumppresetswith) 未包含 `velocity`）。
+- **原子类型的编号**：默认按 1 起始（`type: 1` 对应 [`creation.alloy.types`](#creationalloytypes) 中的第一种原子）；
+  如果文件中的 `type` 列是从 0 开始的（本程序输出的 dump 即为这种编号），
+  需要先设置环境变量 `SUPRAMD_DUMP_TYPE_ZERO_BASE=1`（或 `true`、`yes`）再运行程序，否则可能报类型越界的错误。
+- **原子位置**：坐标超出盒子的原子会被映射（wrap）回盒子内；
+  读入的原子数与文件中的原子数不一致时（例如某些原子离盒子太远、无法归属到任何进程），
+  程序会丢弃这部分原子并在日志中给出警告，此时请检查文件中的盒子与 `simulation.phasespace`、`simulation.lattice_const` 是否一致。
+
+:::tip
+因此，restart 时可以直接读取上一次运行（同一盒子、同一 `simulation.phasespace`）输出的 dump 文件，
+只需要保证配置文件中的盒子、原子类型与势函数和上一次运行一致；
+注意本程序输出的 dump 的 `type` 列从 0 起始，读取前需要按上文设置 `SUPRAMD_DUMP_TYPE_ZERO_BASE=1`。例如：
+
+```yaml
+read_phase:
+  enable: true              # 与 creation.create_phase: false 配合使用
+  format: "dump"
+  version: 0
+  file_path: "./misa_mdl.10.dump"
+  init_step: 10             # 从第 10 步继续
+  timestep: -1              # 读取文件中的最后一帧
+```
+:::
 
 ## potential
 说明：势函数文件相关参数;  
