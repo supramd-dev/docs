@@ -15,6 +15,7 @@ sidebar_label: "配置项说明"
 | `config.md-npt.yaml` | NVT（Nosé-Hoover）弛豫 + NPT（MTTK）控温控压 |
 | `deform/config.md-npt-tension.yaml` | 单轴拉伸：`actions.deform` 沿 x 轴拉伸，NPT `P_xyz` 只对 y、z 轴控压 |
 | `lj-cut/config.lj.yaml` | Lennard-Jones（`lj/cut`）势函数 + FCC 晶格，配套参数文件 `lj.pot` |
+| `custom-potential/config.morse.yaml` | 第三方势函数（`custom`）：使用随代码发布的 Morse 势示例 `example/morse`，需配合 `--algo=verlet-list` |
 
 ## 配置项目录
 
@@ -25,7 +26,7 @@ sidebar_label: "配置项说明"
 | [simulation](#simulation) | 设置模拟原子数、晶格常数等基本属性 |
 | [potential](#potential)  | 设置原子间的相互作用势函数 |
 | [creation](#creation)   | 创建模拟体系的相关配置 |
-| [read_phase](#read_phase) | 读取配置文件的模式创建模拟体系的相关配置 |
+| [read_phase](#read_phase) | 读取已有的原子体系（如 dump 文件）来初始化模拟的相关配置 |
 | [output](#output) | 轨迹文件和热力学信息输出的预设，日志输出控制 |
 | [stages](#stages) | 模拟的 stages |
 
@@ -169,9 +170,9 @@ creation:
 :::
 
 ## read_phase
-读取一个体系，用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
+读取一个已有的原子体系（如 dump 文件），用于初始化模拟（一般用于重启/续算，或读入由其他程序生成的原子构型）。
 
-该配置块可以省略；如果保留该配置块，则其下的 `enable`、`version`、`file_path`、`init_step` 四个字段都必须填写。
+该配置块可以省略；如果保留该配置块，则其下的 `enable`、`format`、`version`、`file_path`、`init_step`、`timestep` 六个字段都必须填写。
 
 :::warning
 `read_phase.enable` 与 [`creation.create_phase`](#creationcreate_phase) 不能同时为 true，也不能同时为 false：
@@ -185,20 +186,77 @@ creation:
 类型：Boolean;  
 说明：是否开启读取原子体系的方式，来初始化模拟。
 
+### read_phase.format
+类型：String;  
+默认值：`dump`;  
+说明：所读取文件的格式，目前支持的取值如下：
+
+| 取值 | 说明 |
+| -- | -- |
+| `dump` | 文本 dump 文件（由 `ITEM: TIMESTEP`、`ITEM: NUMBER OF ATOMS`、`ITEM: BOX BOUNDS`、`ITEM: ATOMS` 等段落构成的轨迹文件），也是本程序 [`output.atom_dump.presets[].mode`](#outputatom_dumppresetsmode) 取 `dump` 时所输出的格式 |
+
+目前仅实现了 `dump` 这一种格式，填写其它取值时程序会报
+`cannot read the file ...: the format ... is not supported yet` 并退出。
+
 ### read_phase.version
 类型：Integer;  
 默认值：0;  
-说明：所读取的原子体系的文件格式版本号。目前仅支持 `0`。
+说明：所读取文件的格式版本号。目前仅支持 `0`；该字段当前仅用于记录（例如输出到日志中），
+文件的实际解析方式由 [`read_phase.format`](#read_phaseformat) 决定。
 
 ### read_phase.file_path
 类型：String;  
-说明：读取原子体系的文件路径。
+说明：所读取文件的路径，可以是绝对路径，也可以是相对于程序运行目录的相对路径。  
+在读取模式（`read_phase.enable: true`）下该选项为必填项。
 
 ### read_phase.init_step
 类型：Integer;  
 默认值：0;  
-说明：读取原子体系后，初始的时间步。一般在 restart 模拟（或者叫从检查点开始模拟）的时候会很有用，
+说明：读取原子体系后，模拟的起始时间步。一般在 restart 模拟（或者叫从检查点开始模拟）的时候会很有用，
 程序会以该时间步数作为模拟的起始时间步（同时影响热力学输出中的 `step`、`time`）。
+它与 `read_phase.timestep`（读取文件中的哪一帧）是相互独立的两个概念。
+
+### read_phase.timestep
+类型：Integer;  
+默认值：-1;  
+说明：读取文件中的哪一帧，取值为该帧的 timestep（时间步）。  
+取负数时（默认值为 `-1`）读取文件中的**最后一帧**，这通常就是 restart 想要的那一帧；
+取非负数时读取 timestep 等于该值的帧，文件中不存在该帧时程序会报错退出。  
+该选项仅对 `format: "dump"` 有效。
+
+#### dump 文件的读取约定
+以 `read_phase.format: "dump"` 读取体系时，有以下约定：
+
+- **盒子**：只支持正交盒子（带有 tilt 的 triclinic 盒子暂不支持）；
+  文件中盒子的尺寸必须与配置的模拟盒子一致（即 `simulation.phasespace[i] × simulation.lattice_const`，
+  允许 1e-6 的相对误差），否则程序报错退出，此时请检查这两个配置项。
+  同时应保证 [`creation.lattice.style`](#creationlatticestyle) 与文件中原子所在的晶格一致，
+  因为使用 `hash` 算法时原子会被放置到最近的晶格点上。
+- **列**：`ITEM: ATOMS` 行必须包含 `id`、`type` 列以及坐标列；
+  坐标列可以取 `x y z`（绝对坐标，优先使用）、`xs ys zs`（分数坐标）或 `xu yu zu`（未包裹坐标），三者取其一；
+  速度列 `vx vy vz` 是可选的，文件中没有速度列时读入的原子的速度取 0（例如输出时 [`with`](#outputatom_dumppresetswith) 未包含 `velocity`）。
+- **原子类型的编号**：默认按 1 起始（`type: 1` 对应 [`creation.alloy.types`](#creationalloytypes) 中的第一种原子）；
+  如果文件中的 `type` 列是从 0 开始的（本程序输出的 dump 即为这种编号），
+  需要先设置环境变量 `SUPRAMD_DUMP_TYPE_ZERO_BASE=1`（或 `true`、`yes`）再运行程序，否则可能报类型越界的错误。
+- **原子位置**：坐标超出盒子的原子会被映射（wrap）回盒子内；
+  读入的原子数与文件中的原子数不一致时（例如某些原子离盒子太远、无法归属到任何进程），
+  程序会丢弃这部分原子并在日志中给出警告，此时请检查文件中的盒子与 `simulation.phasespace`、`simulation.lattice_const` 是否一致。
+
+:::tip
+因此，restart 时可以直接读取上一次运行（同一盒子、同一 `simulation.phasespace`）输出的 dump 文件，
+只需要保证配置文件中的盒子、原子类型与势函数和上一次运行一致；
+注意本程序输出的 dump 的 `type` 列从 0 起始，读取前需要按上文设置 `SUPRAMD_DUMP_TYPE_ZERO_BASE=1`。例如：
+
+```yaml
+read_phase:
+  enable: true              # 与 creation.create_phase: false 配合使用
+  format: "dump"
+  version: 0
+  file_path: "./misa_mdl.10.dump"
+  init_step: 10             # 从第 10 步继续
+  timestep: -1              # 读取文件中的最后一帧
+```
+:::
 
 ## potential
 说明：势函数文件相关参数;  
@@ -207,7 +265,9 @@ creation:
 类型：String  
 说明：势函数文件格式, 取值 `setfl` 或者 `funcfl`，目前 EAM 势函数仅支持 `setfl` 格式;
 使用 Lennard-Jones 势（`potential.type` 为 `lj/cut`）时，可以填写 `lj`。  
-该选项为必填项;  
+使用第三方势函数（`potential.type` 为 `custom`）时，该选项仅用于记录（例如输出到日志中），
+自定义势表的解析方式由势函数自身决定，参见 [自定义势函数](../apis/custom-potential.md);  
+除 `custom` 外，该选项为必填项;  
 
 :::note
 程序目前仅使用 `potential.type` 来决定势函数的解析方式，`potential.format` 仅用于记录（例如输出到日志中）。
@@ -221,15 +281,45 @@ creation:
 | -- | -- |
 | `eam/alloy` | EAM 合金势（setfl 格式） |
 | `eam/fs` | EAM  Finnis-Sinclair 势（setfl 格式） |
+| `eam/cd` | 二元的浓度相关 EAM 势（setfl 格式 + `h(x)` 多项式），详见 [CD-EAM 势函数](#cd-eam-势函数) |
 | `mlip2` | 机器学习势 mtp3（mlip-3），需要编译时开启 MLIP-2 支持，参见 [MTP 势函数](../build/mtp-potential.md) |
 | `lj/cut` | Lennard-Jones 截断势，其参数文件格式见 [Lennard-Jones 势函数参数文件](#lennard-jones-势函数参数文件) |
+| `custom` | 第三方（用户自定义）势函数，由编译进程序的用户源码提供，参见 [自定义势函数](../apis/custom-potential.md) |
 
 该选项为必填项;  
 
 ### potential.file_path
 类型：String  
 说明：势函数文件路径; 可以是绝对路径，也可以是相对于程序运行目录的相对路径;  
-该选项为必填项;  
+当 `potential.type` 为 `custom` 时，该选项可选，其内容由势函数自行解释;  
+其余取值下，该选项为必填项;  
+
+### potential.name
+类型：String  
+说明：第三方势函数的注册名，即势函数源码中 `REGISTER_CUSTOM_POTENTIAL(name, Impl)` 所声明的名字，
+例如 `example/morse`;  
+当且仅当 `potential.type` 为 `custom` 时该选项有效，且为必填项;  
+程序在解析配置文件时即核对该名字是否存在于当前可执行文件所注册的势函数列表中，不存在则报错退出;  
+
+### potential.params
+类型：Map  
+说明：第三方势函数的参数，为自由格式的键值映射，程序不做任何解释，原样传递给势函数的一次性初始化
+`init()`;  
+当且仅当 `potential.type` 为 `custom` 时该选项有效，且为可选项;  
+支持嵌套映射与列表，势函数通过点号键（如 `well.depth`）访问嵌套项; 示例：
+
+```yaml
+potential:
+  type: "custom"
+  name: "example/morse"
+  params:
+    well_depth: 0.42   # eV
+    alpha: 1.8         # 1/Å
+    r0: 2.866          # Å
+    cutoff: 5.6        # Å，不得超过 simulation.cutoff_radius
+```
+
+各参数的取值与含义由势函数自身定义，详见 [自定义势函数](../apis/custom-potential.md);  
 
 ### Lennard-Jones 势函数参数文件
 当 `potential.type` 为 `lj/cut` 时，`potential.file_path` 指向一个纯文本的 LJ 参数文件（示例如 `$MD_PATH/example/lj-cut/lj.pot`），
@@ -255,6 +345,56 @@ cross  i  j  epsilon_ij  sigma_ij
 配置项 [`simulation.cutoff_radius`](#simulationcutoff_radius) 仍然必须填写，它决定邻居列表的搜索范围；
 一般将其设置为**不小于**参数文件中的 `cutoff`，否则超出邻居列表搜索范围的原子对将无法参与计算。
 :::
+
+### CD-EAM 势函数
+当 `potential.type` 为 `eam/cd` 时，程序使用二元的**浓度相关 EAM**（CD-EAM，one-site 形式，
+参见 Stukowski, Sadigh, Erhart, Caro, *Modelling Simul. Mater. Sci. Eng.* **17**, 075005 (2009)）。
+该势函数在普通 EAM 的基础上，把两种不同元素原子之间的相互作用按照两者的局域浓度的函数 `h(x)` 进行缩放，
+适用于描述 Fe-Cr 等二元合金中随局域组态变化的相互作用。
+
+使用 `eam/cd` 需要注意以下几点：
+
+- `potential.format` 必须为 `setfl`；
+- 势表文件是一个二元的 setfl 表（即与 `eam/alloy` 相同、含两种元素的表格），并在表之后追加注释行、`h(x)` 多项式的阶数与各阶系数（例如 Fe-Cr 势表文件 `FeCr.cdeam`，
+  获取方式见 [准备势表文件](../run/potential-file.md#cd-eam-势表文件)）；
+- [`creation.alloy.types`](#creationalloytypes) 必须**恰好**配置两种原子，它们与文件中的两种元素按顺序一一对应
+  （第一种原子对应文件中的第一种元素，第二种原子对应第二种元素）；
+- [`simulation.cutoff_radius`](#simulationcutoff_radius) 必须与势表文件中的截断距离一致，否则程序在读取势表时报错退出；
+
+相关配置块的示例如下（其余配置块从略）：
+
+```yaml
+simulation:
+  phasespace: [50, 50, 50]
+  lattice_const: 2.855322
+  cutoff_radius: 5.5    # 必须与势表文件中的截断距离一致
+  def_timesteps_length: 0.001
+
+potential:
+  format: "setfl"
+  type: "eam/cd"
+  file_path: "./FeCr.cdeam"
+
+creation:
+  create_phase: true
+  lattice:
+    style: bcc
+  alloy:
+    types:              # 恰好两种原子：分别对应文件中的两种元素
+      - name: Fe
+        mass: 55.845
+        weight: 9
+      - name: Cr
+        mass: 51.9961
+        weight: 1
+```
+
+运行（注意 `--algo=verlet-list`）：
+
+```bash
+cd $MD_PATH/example
+mpirun -n 4 ../build/bin/supramd -c config.cd.yaml --algo=verlet-list
+```
 
 ## output
 说明：输出相关配置;

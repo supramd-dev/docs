@@ -114,9 +114,11 @@ creation: #  create atoms.
 
 read_phase: # read atoms data from a file. It can be used for restart.
   enable: false
+  format: "dump" # string type, the format of the file: "dump" (a text dump file) is the only one read for now.
   version: 0
-  file_path: "./10.atom" # string type, for read mode.
+  file_path: "./misa_mdl.10.dump" # string type, for read mode: the path of the file, in the format above.
   init_step: 10 # initial step for simulation
+  timestep: -1 # the frame of the file to read: the one at this timestep. -1 reads the last frame of the file.
 
 output:
   atom_dump:

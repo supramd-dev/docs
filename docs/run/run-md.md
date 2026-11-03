@@ -33,7 +33,8 @@ SupraMD 的用法为：
 supramd [OPTIONS]
 ```
 
-各选项的含义如下（其中 `-c` / `--conf` 是唯一必须指定的选项）：
+各选项的含义如下（其中 `-c` / `--conf` 是运行模拟时唯一必须指定的选项，
+`-h`、`-v`、`--list-pot`、`--list-pot-all` 这几项不读取配置文件，无需指定 `-c`）：
 
 | 选项 | 说明 |
 | -- | -- |
@@ -41,6 +42,8 @@ supramd [OPTIONS]
 | `-c <config-file-path>`, `--conf=<config-file-path>` | **必填**，指定配置文件的路径 |
 | `-a <algo>`, `--algo=<algo>` | 原子与邻居原子的搜索算法，取值为 `hash`（默认）或 `verlet-list`，详见 [CPU 环境](#4cpu-环境) |
 | `-v`, `--version` | 显示版本信息（含是否支持 mlip2 势函数、是否支持 HIP GPU 等编译选项） |
+| `--list-pot` | 列出当前可执行文件能够运行的势函数（含 `custom` 第三方势函数），详见 [--list-pot：列出可用的势函数](#--list-pot列出可用的势函数) |
+| `--list-pot-all` | 列出源码中所有势函数的所有后端（包含当前可执行文件未编译进来的后端） |
 | `--map-mpi-inner-node <x> <y> <z>` | 节点内 MPI 进程的三维映射方式，默认为 `1 1 1`，详见 [CPU 环境](#4cpu-环境) |
 | `--no-newton` | 关闭牛顿第三定律（默认开启），详见 [CPU 环境](#4cpu-环境) |
 | `--acc-none` | 仅使用 CPU 进行计算（即默认行为） |
@@ -71,6 +74,14 @@ $ build/bin/supramd --help
                                         atom searching. It can be hash (default)
                                         or verlet-list.
       -v, --version                     show version number
+      --list-pot                        list the potentials this binary can run,
+                                        with the backends and the algorithms
+                                        (hash, verlet-list) each of them
+                                        supports
+      --list-pot-all                    like --list-pot, but lists the backends
+                                        of every potential of the source,
+                                        including the ones this binary was not
+                                        built with
       --map-mpi-inner-node=[map]        inner-node MPI rank mapping (x y z)
       --no-newton                       does not apply Newton's 3rd law
 
@@ -86,6 +97,47 @@ $ build/bin/supramd --help
 
     authors:BaiHe.
 ```
+:::
+
+### --list-pot：列出可用的势函数
+`--list-pot` 用来查看**当前可执行文件**能够运行哪些势函数，以及每种势函数支持的后端（CPU/GPU/DCU）
+与原子/邻居数据结构（`hash`、`verlet-list`）。它不需要配置文件，因此在拿到一个编译好的二进制文件后，
+可以先用它确认该二进制是否包含你需要的势函数与后端：
+
+```bash
+$ build/bin/supramd --list-pot
+eam/alloy #arch: cpu(hash, verlet-list)
+eam/cd #arch: cpu(verlet-list)
+eam/fs #arch: cpu(hash, verlet-list)
+example/morse #arch: cpu(verlet-list)
+lj/cut #arch: cpu(verlet-list)
+```
+
+每一行的格式为 `势函数名 #arch: 后端(支持的数据结构, ...)`，其中：
+
+- 势函数名即配置文件中 [`potential.type`](../reference/configure-terms.md#potentialtype) 的取值；
+  第三方（`custom`）势函数显示为它的注册名，如 `example/morse`；
+- 后端为 `cpu`，或 `gpu/hip`（GPU/DCU 版本）、`dsp/hthreads`（DSP 版本）等；
+- 括号内是该后端可以配合使用的数据结构，即 `-a` / `--algo` 的取值。例如
+  `eam/cd #arch: cpu(verlet-list)` 表示该势函数目前只有 CPU 实现，并且只能配合 `--algo=verlet-list` 使用，
+  详见 [CD-EAM 势函数](../reference/configure-terms.md#cd-eam-势函数)。
+
+`--list-pot-all` 列出的是**源码中**所有势函数的所有后端，包含当前可执行文件编译时未启用的后端
+（例如纯 CPU 版本也会列出 `gpu/hip` 行），因此它的输出通常比 `--list-pot` 多几行；
+两者同时指定时以 `--list-pot-all` 为准。
+
+```bash
+$ build/bin/supramd --list-pot-all
+# every backend the potentials have kernels for in the source, not only the ones this binary was built with (see --list-pot)
+eam/alloy #arch: cpu(hash, verlet-list), gpu/hip(hash, verlet-list), dsp/hthreads(hash)
+eam/cd #arch: cpu(verlet-list)
+eam/fs #arch: cpu(hash, verlet-list), gpu/hip(hash, verlet-list)
+example/morse #arch: cpu(verlet-list)
+lj/cut #arch: cpu(verlet-list)
+```
+
+:::note
+不同构建版本（是否支持 mlip2、是否支持 GPU/DCU 等）的输出会略有差异，以实际输出为准。
 :::
 
 ## 3.运行结果

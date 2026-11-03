@@ -25,7 +25,7 @@ simulation:
 
 potential: # potential file config
   format: "setfl" # string type
-  type: "eam/alloy" # string type. Potential type used for simulation. Its value can be "eam/fs" or "eam/alloy", "lj/cut", "mlip2".
+  type: "eam/alloy" # string type. Potential type used for simulation. Its value can be "eam/fs", "eam/alloy", "eam/cd", "lj/cut", "mlip2", or "custom".
   file_path: "FeCuNi.eam.alloy" # string type
 
 creation: #  create atoms.
@@ -49,9 +49,11 @@ creation: #  create atoms.
 
 read_phase: # read atoms data from a file. It can be used for restart.
   enable: false
+  format: "dump" # string type, the format of the file: "dump" (a text dump file) is the only one read for now.
   version: 0
-  file_path: "./10.atom" # string type, for read mode.
+  file_path: "./misa_mdl.10.dump" # string type, for read mode: the path of the file, in the format above.
   init_step: 10 # initial step for simulation
+  timestep: -1 # the frame of the file to read: the one at this timestep. -1 reads the last frame of the file.
 
 output:
   atom_dump:
