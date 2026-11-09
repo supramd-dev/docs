@@ -87,10 +87,45 @@ sidebar_label: "配置项说明"
 默认值：1024;  
 说明：创建原子信息的随机数种子；仅 `creation.create_phase` 为 true 时有效;  
 
+:::note
+程序会在该值的基础上叠加各 MPI 进程的进程编号，使不同进程抽到的随机数序列不同
+（否则每个进程的子盒子会重复同一套随机的初始速度）。因此同一个 `create_seed` 在不同进程数下得到的初始体系不同。
+:::
+
 ### creation.create_t_set
 类型：Float;  
 单位：开, K;  
 说明：创建的体系的温度；仅 `creation.create_phase` 为 true 时有效，且此时为必填项;  
+
+### creation.create_dist
+类型：String;  
+默认值：`uniform`;  
+说明：创建的体系中原子初始速度的分布，可取 `uniform`（均匀分布）或 `gauss`（正态分布）；仅 `creation.create_phase` 为 true 时有效;  
+
+两种分布都会在体系创建完成后清除体系总动量，并把温度缩放到 [`creation.create_t_set`](#creationcreate_t_set) 指定的值，
+因此两者的初始温度是相同的，区别只在于速度按什么形状分布：
+
+- `uniform`：默认值，也是旧版本的行为。三个方向的速度分量各自独立地取自 (-0.5, 0.5) 上的均匀分布，
+  缩放后每个原子的速度仍然落在同一个有界区间内，不存在速度很高的原子；
+- `gauss`：按照目标温度对应的标准差（`σ = sqrt(k_B * T / m)`，其中 `m` 为原子类型定义中的 `mass`）从正态分布中抽样，
+  得到与热平衡体系一致的麦克斯韦-玻尔兹曼速度分布，少数原子的速度可以远高于平均速度。
+
+速度的随机数由 [`creation.create_seed`](#creationcreate_seed) 决定：同一个种子得到同一套速度，换一个种子则不同。
+
+```yaml
+creation:
+  create_t_set: 600
+  create_dist: gauss # initial velocity distribution: uniform or gauss
+```
+
+该取值不区分大小写（`gauss`、`Gauss` 均可）；取其它值时程序会在解析配置时报
+``creation `create_dist` must be `uniform` or `gauss`.`` 并退出，而不是回退到默认值。
+
+:::note
+在 MD（`supramd`）中该选项只作用于**创建模式**：以 `read_phase` 读取体系时（`creation.create_phase: false`），
+原子速度直接取自文件（文件不含速度列时取 0），`create_dist` 不起作用。
+在 AKMC（`supra-akmc`）中，读取模式下的原子速度同样由该选项重新生成。
+:::
 
 ### creation.lattice
 说明：创建原子时所使用的晶格结构的配置；仅 `creation.create_phase` 为 true 时有效，且此时为必填项;  
